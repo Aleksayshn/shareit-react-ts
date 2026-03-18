@@ -40,7 +40,7 @@ body {
     radial-gradient(circle at top left, rgb(255 255 255 / 0.72), transparent 30%),
     linear-gradient(180deg, #f5ecdd 0%, #efe7d8 46%, #e8dfd1 100%);
   color: var(--foreground);
-  font-family: var(--font-geist-sans), sans-serif;
+  font-family: var(--font-sans), sans-serif;
   text-rendering: optimizeLegibility;
 }
 

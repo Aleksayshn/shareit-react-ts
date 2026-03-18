@@ -4,7 +4,14 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { itemQueryKeys, searchItems } from "@/src/entities/item";
 import { AppError, useDebouncedValue } from "@/src/shared/lib";
-import { Card, EmptyState, Field, Input, Spinner } from "@/src/shared/ui";
+import {
+  Card,
+  EmptyState,
+  ErrorState,
+  Field,
+  Input,
+  LoadingState,
+} from "@/src/shared/ui";
 import { ItemList } from "@/src/widgets";
 
 const SEARCH_DEBOUNCE_MS = 350;
@@ -65,26 +72,18 @@ export function SearchItemsSection() {
       ) : null}
 
       {isWaitingForDebounce ? (
-        <Card className="flex items-center gap-3">
-          <Spinner />
-          <p className="text-sm text-muted">Waiting for you to pause typing...</p>
-        </Card>
+        <LoadingState message="Waiting for you to pause typing..." />
       ) : null}
 
       {searchQuery.isPending ? (
-        <Card className="flex items-center gap-3">
-          <Spinner />
-          <p className="text-sm text-muted">Searching items...</p>
-        </Card>
+        <LoadingState message="Searching items..." />
       ) : null}
 
       {searchQuery.isError ? (
-        <Card>
-          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-danger">
-            Search error
-          </p>
-          <p className="mt-3 text-sm leading-7 text-muted">{errorMessage}</p>
-        </Card>
+        <ErrorState
+          description={errorMessage}
+          title="Search error"
+        />
       ) : null}
 
       {searchQuery.isSuccess && normalizedSearchTerm.length > 0 ? (
