@@ -1,36 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ShareIt MVP
+
+Frontend foundation for the ShareIt MVP built with Next.js App Router, TypeScript, TanStack Query, Zustand, and a lightweight Feature-Sliced Design structure.
 
 ## Getting Started
 
-First, run the development server:
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Create your local env file:
+
+```bash
+cp .env.example .env.local
+```
+
+3. Start the app:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Describe
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Stage 1 implements the project foundation only:
 
-## Learn More
+- Next.js app shell with central `AppProviders`
+- shared environment config
+- fetch-based API client with query param support and `X-Sharer-User-Id` injection
+- normalized `AppError` model for backend and network failures
+- TanStack Query client setup for server-state concerns
+- persisted Zustand store for the active sharer
+- minimal shared UI primitives for upcoming forms and states
+- public API exports for the current FSD slices
 
-To learn more about Next.js, take a look at the following resources:
+## Architecture
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `app/` keeps the Next.js route entrypoints thin.
+- `src/app/` contains application wiring such as providers.
+- `src/views/` owns route-level composition.
+- `src/shared/` contains reusable infrastructure: config, API, error handling, state, and UI primitives.
+- `src/entities/`, `src/features/`, `src/widgets/`, and `src/processes/` are staged and ready for the next increments.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+`src/views/` is used instead of `src/pages/` because `pages/` is a reserved Next.js routing directory.
 
-## Deploy on Vercel
+## Environment
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Set `NEXT_PUBLIC_API_BASE_URL` to the real ShareIt backend URL.  
+If it is omitted, the app falls back to `http://localhost:8080`.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Stage Roadmap
+
+### Stage 2
+
+Build the Users domain and pages:
+
+- `entities/user`
+- `features/select-user`
+- `features/create-user`
+- `features/update-user`
+- `features/delete-user`
+- `widgets/user-switcher`
+- routes:
+  - `/users`
+  - `/users/[id]`
+
+Rules for Stage 2:
+
+- separate DTOs, domain models, and mappers
+- use TanStack Query for queries and mutations
+- use React Hook Form + Zod for create and edit forms
+- support list, create, update, delete, and active-user selection
+- cover loading, empty, and error states
+- keep route files thin
+
+### Stage 3
+
+Build the Items flow next:
+
+- `entities/item`
+- `features/create-item`
+- `features/update-item`
+- `features/list-owned-items`
+- `features/search-items`
+- `widgets/item-list`
+- routes:
+  - `/items`
+  - `/items/[id]`
+
+Stage 3 should introduce owner-focused item management, item detail screens, and the search flow that the selected user can act through.
