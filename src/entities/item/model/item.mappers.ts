@@ -1,3 +1,4 @@
+import { mapBookingDtoToBookingPreview } from "@/src/entities/booking";
 import { mapCommentDtoToComment } from "@/src/entities/comment";
 import type { Item, ItemDraft } from "./item";
 import type {
@@ -12,7 +13,14 @@ export function mapItemDtoToItem(dto: ItemDto): Item {
     name: dto.name,
     description: dto.description,
     isAvailable: dto.available,
+    ownerId: dto.ownerId ? String(dto.ownerId) : null,
     requestId: dto.requestId ?? null,
+    lastBooking: dto.lastBooking
+      ? mapBookingDtoToBookingPreview(dto.lastBooking)
+      : null,
+    nextBooking: dto.nextBooking
+      ? mapBookingDtoToBookingPreview(dto.nextBooking)
+      : null,
     comments: (dto.comments ?? []).map(mapCommentDtoToComment),
   };
 }

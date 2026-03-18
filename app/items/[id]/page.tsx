@@ -2,14 +2,14 @@ import { ItemDetailsPage } from "@/src/views";
 
 interface ItemDetailsRouteProps {
   params: Promise<{
-    itemId: string;
+    id: string;
   }>;
 }
 
 export default async function ItemDetailsRoute({
   params,
 }: ItemDetailsRouteProps) {
-  const { itemId } = await params;
+  const { id } = await params;
 
-  return <ItemDetailsPage itemId={itemId} />;
+  return <ItemDetailsPage itemId={id} />;
 }

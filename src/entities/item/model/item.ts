@@ -1,3 +1,4 @@
+import type { BookingPreview } from "@/src/entities/booking";
 import type { Comment } from "@/src/entities/comment";
 
 export interface Item {
@@ -5,7 +6,10 @@ export interface Item {
   name: string;
   description: string;
   isAvailable: boolean;
+  ownerId: string | null;
   requestId: number | null;
+  lastBooking: BookingPreview | null;
+  nextBooking: BookingPreview | null;
   comments: Comment[];
 }
 
