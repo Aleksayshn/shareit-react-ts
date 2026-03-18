@@ -1,1 +1,3 @@
-export * from "./home";
+export * from "./discovery";
+export * from "./item-details";
+export * from "./my-items";

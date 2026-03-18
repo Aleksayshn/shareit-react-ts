@@ -97,6 +97,7 @@ export function LinkButton({
     <Link
       className={getButtonClasses({ className, variant, size })}
       href={href}
+      {...props}
     >
       {children}
     </Link>

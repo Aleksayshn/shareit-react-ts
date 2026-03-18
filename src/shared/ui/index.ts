@@ -6,3 +6,4 @@ export * from "./input";
 export * from "./page-shell";
 export * from "./select";
 export * from "./spinner";
+export * from "./textarea";

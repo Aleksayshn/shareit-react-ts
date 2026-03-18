@@ -1,5 +1,5 @@
-import { HomePage } from "@/src/views";
+import { DiscoveryPage } from "@/src/views";
 
 export default function Home() {
-  return <HomePage />;
+  return <DiscoveryPage />;
 }
