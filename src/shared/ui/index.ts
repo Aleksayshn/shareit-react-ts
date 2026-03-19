@@ -1,3 +1,4 @@
+export * from "./app-error-panel";
 export * from "./button";
 export * from "./card";
 export * from "./empty-state";

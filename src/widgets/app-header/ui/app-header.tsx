@@ -2,13 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { ActiveUserSelect } from "@/src/features";
 import { cn } from "@/src/shared/lib";
 import { useActiveUserStore } from "@/src/shared/model";
-import { Button, Input } from "@/src/shared/ui";
 
 const navigationItems = [
   { href: "/", label: "Discover" },
+  { href: "/users", label: "Users" },
   { href: "/items", label: "My items" },
   { href: "/bookings", label: "My bookings" },
   { href: "/bookings/owner", label: "Owner requests" },
@@ -17,9 +17,6 @@ const navigationItems = [
 export function AppHeader() {
   const pathname = usePathname();
   const selectedUserId = useActiveUserStore((state) => state.selectedUserId);
-  const setSelectedUserId = useActiveUserStore((state) => state.setSelectedUserId);
-  const clearSelectedUserId = useActiveUserStore((state) => state.clearSelectedUserId);
-  const [draftUserId, setDraftUserId] = useState(selectedUserId ?? "");
 
   return (
     <header className="sticky top-0 z-50 border-b border-border/80 bg-[#fff8ec]/90 backdrop-blur">
@@ -34,34 +31,7 @@ export function AppHeader() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <Input
-              aria-label="Active user ID"
-              className="min-w-52"
-              placeholder="Active user ID"
-              value={draftUserId}
-              onChange={(event) => setDraftUserId(event.target.value)}
-            />
-            <Button
-              size="sm"
-              onClick={() => {
-                const normalizedUserId = draftUserId.trim();
-                setSelectedUserId(normalizedUserId || null);
-              }}
-            >
-              Save user
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => {
-                clearSelectedUserId();
-                setDraftUserId("");
-              }}
-            >
-              Clear
-            </Button>
-          </div>
+          <ActiveUserSelect />
         </div>
 
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">

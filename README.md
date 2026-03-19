@@ -4,21 +4,23 @@ ShareIt MVP is a Next.js App Router frontend for discovering items, managing sha
 
 ## What Is Included
 
+- users management on `/users` and `/users/[id]` via the real `/users` API
 - item discovery on `/` via `GET /items/search`
 - owner inventory on `/items`
 - item details, booking request CTA, and comment flow on `/items/[id]`
 - borrower bookings on `/bookings`
 - owner booking requests on `/bookings/owner`
-- persisted active-user header injection through `X-Sharer-User-Id`
+- persisted active-user selection with automatic `X-Sharer-User-Id` injection
+- React Hook Form + Zod for create/update forms
 - TanStack Query for server state and Zustand for the tiny active-user client state
 
 ## Architecture Summary
 
 - `app/` contains thin route entrypoints and the root layout
 - `src/views/` owns route-level composition and prefers Server Components
-- `src/features/` owns interactive workflows like create item, create booking, approve/reject booking, filtering, and comments
+- `src/features/` owns interactive workflows like user selection, create item, create booking, approve/reject booking, filtering, and comments
 - `src/entities/` owns DTOs, domain models, mappers, query keys, and API functions
-- `src/widgets/` owns composed UI blocks like the app header, item list, and booking list
+- `src/widgets/` owns composed UI blocks like the app header, item list, booking list, and user list
 - `src/shared/` contains cross-cutting UI primitives, config, API client, store, error handling, hooks, and query setup
 
 ## Rendering Strategy
@@ -59,18 +61,25 @@ npm run dev
 ## Business Assumptions
 
 - the backend follows the ShareIt-style REST contract used by this frontend:
+  - `GET /users`
+  - `POST /users`
+  - `GET /users/{id}`
+  - `PATCH /users/{id}`
+  - `DELETE /users/{id}`
   - `GET /items`
-  - `GET /items/search`
+  - `GET /items/search?text=&from=&size=`
   - `GET /items/{id}`
   - `POST /items`
   - `PATCH /items/{id}`
   - `POST /bookings`
   - `GET /bookings`
+  - `GET /bookings/{id}`
   - `GET /bookings/owner`
   - `PATCH /bookings/{id}?approved=true|false`
   - `POST /items/{id}/comment`
 - item details may include `ownerId`, `lastBooking`, `nextBooking`, and `comments`
 - booking list endpoints support `state`, `from`, and `size`
+- discovery currently requests the first page of search results with `from=0` and `size=20`
 - the backend enforces business rules for comment eligibility and invalid booking windows, and returns readable error messages
 
 ## Query And State Notes
@@ -86,13 +95,15 @@ npm run dev
 
 - verify the backend DTO shape matches the assumed ShareIt contract exactly, especially nested booking and comment fields
 - confirm the backend exposes `ownerId` on item details if owner-only UI is required
-- replace the header’s manual active-user input with a proper Users flow if the project continues beyond MVP
+- confirm whether the backend returns a useful body for `DELETE /users/{id}` or always `204 No Content`
+- add optional booking detail UI later if `GET /bookings/{id}` needs to be surfaced in the product
 - add automated tests once the API contract is stable
 
 ## MVP Checklist
 
 - [x] real API client with shared error normalization
 - [x] active user persistence and automatic header injection
+- [x] real users CRUD and active-user selection flow
 - [x] discovery search with debounce and empty-query guard
 - [x] owner item management
 - [x] item details with comments and booking CTA rules

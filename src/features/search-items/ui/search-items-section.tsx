@@ -15,6 +15,7 @@ import {
 import { ItemList } from "@/src/widgets";
 
 const SEARCH_DEBOUNCE_MS = 350;
+const DISCOVERY_PAGE_SIZE = 20;
 
 export function SearchItemsSection() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -22,10 +23,15 @@ export function SearchItemsSection() {
   const normalizedSearchTerm = debouncedSearchTerm.trim();
   const isWaitingForDebounce =
     searchTerm.trim().length > 0 && searchTerm !== debouncedSearchTerm;
+  const searchRequest = {
+    text: normalizedSearchTerm,
+    from: 0,
+    size: DISCOVERY_PAGE_SIZE,
+  };
 
   const searchQuery = useQuery({
-    queryKey: itemQueryKeys.search(normalizedSearchTerm),
-    queryFn: () => searchItems(normalizedSearchTerm),
+    queryKey: itemQueryKeys.search(searchRequest),
+    queryFn: () => searchItems(searchRequest),
     enabled: normalizedSearchTerm.length > 0,
   });
 

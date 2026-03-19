@@ -1,31 +1,15 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { addComment } from "@/src/entities/comment";
+import { addComment, commentFormSchema, type CommentFormValues } from "@/src/entities/comment";
 import { itemQueryKeys } from "@/src/entities/item";
-import { AppError } from "@/src/shared/lib/errors";
-import { Button, Card, Field, Textarea } from "@/src/shared/ui";
+import { AppErrorPanel, Button, Card, Field, Textarea } from "@/src/shared/ui";
 
 interface AddCommentFormProps {
   itemId: string;
   selectedUserId: string | null;
-}
-
-function renderErrorDetails(error: AppError) {
-  if (error.fieldErrors.length === 0) {
-    return null;
-  }
-
-  return (
-    <ul className="grid gap-1 text-sm text-danger">
-      {error.fieldErrors.map((fieldError) => (
-        <li key={`${fieldError.field}-${fieldError.message}`}>
-          {fieldError.field}: {fieldError.message}
-        </li>
-      ))}
-    </ul>
-  );
 }
 
 export function AddCommentForm({
@@ -33,19 +17,22 @@ export function AddCommentForm({
   selectedUserId,
 }: AddCommentFormProps) {
   const queryClient = useQueryClient();
-  const [text, setText] = useState("");
+  const form = useForm<CommentFormValues>({
+    defaultValues: {
+      text: "",
+    },
+    resolver: zodResolver(commentFormSchema),
+  });
+
   const mutation = useMutation({
-    mutationFn: () => addComment(itemId, { text }),
+    mutationFn: (values: CommentFormValues) => addComment(itemId, values),
     onSuccess: async () => {
-      setText("");
+      form.reset();
       await queryClient.invalidateQueries({
         queryKey: itemQueryKeys.detail(itemId),
       });
     },
   });
-
-  const appError =
-    mutation.error instanceof AppError ? mutation.error : null;
 
   return (
     <Card className="grid gap-4">
@@ -58,19 +45,16 @@ export function AddCommentForm({
         </h3>
         <p className="mt-2 text-sm leading-7 text-muted">
           The backend decides whether the selected user is allowed to comment.
-          If the business rule fails, the API message is shown directly.
         </p>
       </div>
 
       <form
         className="grid gap-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          mutation.mutate();
-        }}
+        onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
       >
         <Field
           description="Comments usually become valid after a completed booking."
+          error={form.formState.errors.text?.message}
           htmlFor={`comment-${itemId}`}
           label="Comment"
         >
@@ -83,30 +67,29 @@ export function AddCommentForm({
                 : "Select a user to leave a comment."
             }
             rows={4}
-            value={text}
-            onChange={(event) => setText(event.target.value)}
+            {...form.register("text")}
           />
         </Field>
 
-        {appError ? (
-          <div className="grid gap-2">
-            <p className="text-sm font-medium text-danger">{appError.message}</p>
-            {renderErrorDetails(appError)}
-          </div>
+        {mutation.isError ? (
+          <AppErrorPanel
+            error={mutation.error}
+            fallbackMessage="Unable to add the comment right now."
+          />
         ) : null}
 
         <div className="flex flex-wrap gap-3">
           <Button
-            disabled={!selectedUserId || mutation.isPending || !text.trim()}
+            disabled={!selectedUserId || mutation.isPending}
             type="submit"
           >
             {mutation.isPending ? "Sending..." : "Add comment"}
           </Button>
           <Button
-            disabled={mutation.isPending || !text}
+            disabled={mutation.isPending}
             type="button"
             variant="ghost"
-            onClick={() => setText("")}
+            onClick={() => form.reset()}
           >
             Clear
           </Button>

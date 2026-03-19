@@ -1,4 +1,5 @@
-import { LinkButton, PageShell } from "@/src/shared/ui";
+import { Suspense } from "react";
+import { LinkButton, LoadingState, PageShell } from "@/src/shared/ui";
 import { BookingsContent } from "./bookings-content";
 
 type BookingViewMode = "mine" | "owner";
@@ -39,7 +40,9 @@ export function BookingsPage({ mode }: BookingsPageProps) {
       eyebrow="Bookings"
       title={title}
     >
-      <BookingsContent mode={mode} />
+      <Suspense fallback={<LoadingState message="Loading bookings..." />}>
+        <BookingsContent mode={mode} />
+      </Suspense>
     </PageShell>
   );
 }

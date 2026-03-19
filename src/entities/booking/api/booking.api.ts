@@ -41,6 +41,12 @@ export async function getMyBookings(request: BookingListRequest) {
   return bookings.map(mapBookingDtoToBooking);
 }
 
+export async function getBooking(bookingId: string) {
+  const booking = await apiClient.get<BookingDto>(`/bookings/${bookingId}`);
+
+  return mapBookingDtoToBooking(booking);
+}
+
 export async function getOwnerBookings(request: BookingListRequest) {
   const bookings = await apiClient.get<BookingDto[]>("/bookings/owner", {
     query: createBookingListQuery(request),

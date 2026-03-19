@@ -1,17 +1,23 @@
 "use client";
 
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Controller, useForm } from "react-hook-form";
 import { useEffect, useState } from "react";
-import { ItemEditorFields, itemQueryKeys, type Item } from "@/src/entities/item";
-import { updateItem } from "@/src/entities/item";
-import { AppError } from "@/src/shared/lib/errors";
-import { Button } from "@/src/shared/ui";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  itemFormSchema,
+  itemQueryKeys,
+  updateItem,
+  type Item,
+  type ItemFormValues,
+} from "@/src/entities/item";
+import { AppErrorPanel, Button, Field, Input, Select, Textarea } from "@/src/shared/ui";
 
 interface UpdateItemFormProps {
   item: Item;
 }
 
-function createDraftFromItem(item: Item) {
+function createFormValues(item: Item): ItemFormValues {
   return {
     name: item.name,
     description: item.description,
@@ -22,9 +28,17 @@ function createDraftFromItem(item: Item) {
 export function UpdateItemForm({ item }: UpdateItemFormProps) {
   const queryClient = useQueryClient();
   const [isEditing, setIsEditing] = useState(false);
-  const [draft, setDraft] = useState(() => createDraftFromItem(item));
+  const form = useForm<ItemFormValues>({
+    defaultValues: createFormValues(item),
+    resolver: zodResolver(itemFormSchema),
+  });
+
+  useEffect(() => {
+    form.reset(createFormValues(item));
+  }, [form, item]);
+
   const mutation = useMutation({
-    mutationFn: () => updateItem(item.id, draft),
+    mutationFn: (values: ItemFormValues) => updateItem(item.id, values),
     onSuccess: async () => {
       setIsEditing(false);
       await queryClient.invalidateQueries({
@@ -32,15 +46,6 @@ export function UpdateItemForm({ item }: UpdateItemFormProps) {
       });
     },
   });
-
-  useEffect(() => {
-    setDraft(createDraftFromItem(item));
-  }, [item]);
-
-  const errorMessage =
-    mutation.error instanceof AppError
-      ? mutation.error.message
-      : "Unable to update the item right now.";
 
   if (!isEditing) {
     return (
@@ -53,32 +58,60 @@ export function UpdateItemForm({ item }: UpdateItemFormProps) {
   return (
     <form
       className="grid min-w-80 gap-4 rounded-3xl border border-border/70 bg-surface px-4 py-4"
-      onSubmit={(event) => {
-        event.preventDefault();
-        mutation.mutate();
-      }}
+      onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
     >
-      <ItemEditorFields
-        draft={draft}
-        disabled={mutation.isPending}
-        idPrefix={`update-item-${item.id}`}
-        onChange={setDraft}
-      />
+      <Field
+        error={form.formState.errors.name?.message}
+        htmlFor={`update-item-name-${item.id}`}
+        label="Name"
+      >
+        <Input
+          disabled={mutation.isPending}
+          id={`update-item-name-${item.id}`}
+          {...form.register("name")}
+        />
+      </Field>
+
+      <Field
+        error={form.formState.errors.description?.message}
+        htmlFor={`update-item-description-${item.id}`}
+        label="Description"
+      >
+        <Textarea
+          disabled={mutation.isPending}
+          id={`update-item-description-${item.id}`}
+          rows={4}
+          {...form.register("description")}
+        />
+      </Field>
+
+      <Field htmlFor={`update-item-available-${item.id}`} label="Availability">
+        <Controller
+          control={form.control}
+          name="available"
+          render={({ field }) => (
+            <Select
+              disabled={mutation.isPending}
+              id={`update-item-available-${item.id}`}
+              value={field.value ? "true" : "false"}
+              onChange={(event) => field.onChange(event.target.value === "true")}
+            >
+              <option value="true">Available for booking</option>
+              <option value="false">Unavailable</option>
+            </Select>
+          )}
+        />
+      </Field>
 
       {mutation.isError ? (
-        <p className="text-sm text-danger">{errorMessage}</p>
+        <AppErrorPanel
+          error={mutation.error}
+          fallbackMessage="Unable to update the item right now."
+        />
       ) : null}
 
       <div className="flex flex-wrap gap-3">
-        <Button
-          disabled={
-            mutation.isPending ||
-            !draft.name.trim() ||
-            !draft.description.trim()
-          }
-          size="sm"
-          type="submit"
-        >
+        <Button disabled={mutation.isPending} size="sm" type="submit">
           {mutation.isPending ? "Saving..." : "Save"}
         </Button>
         <Button
@@ -87,7 +120,7 @@ export function UpdateItemForm({ item }: UpdateItemFormProps) {
           type="button"
           variant="ghost"
           onClick={() => {
-            setDraft(createDraftFromItem(item));
+            form.reset(createFormValues(item));
             setIsEditing(false);
           }}
         >

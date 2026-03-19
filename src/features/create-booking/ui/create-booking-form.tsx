@@ -1,31 +1,19 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { createBooking } from "@/src/entities/booking";
+import {
+  bookingFormSchema,
+  createBooking,
+  type BookingFormValues,
+} from "@/src/entities/booking";
 import { itemQueryKeys, type Item } from "@/src/entities/item";
-import { AppError } from "@/src/shared/lib/errors";
-import { Button, Card, Field, Input } from "@/src/shared/ui";
+import { AppErrorPanel, Button, Card, Field, Input } from "@/src/shared/ui";
 
 interface CreateBookingFormProps {
   item: Item;
   selectedUserId: string | null;
-}
-
-function renderErrorDetails(error: AppError) {
-  if (error.fieldErrors.length === 0) {
-    return null;
-  }
-
-  return (
-    <ul className="grid gap-1 text-sm text-danger">
-      {error.fieldErrors.map((fieldError) => (
-        <li key={`${fieldError.field}-${fieldError.message}`}>
-          {fieldError.field}: {fieldError.message}
-        </li>
-      ))}
-    </ul>
-  );
 }
 
 export function CreateBookingForm({
@@ -33,38 +21,28 @@ export function CreateBookingForm({
   selectedUserId,
 }: CreateBookingFormProps) {
   const queryClient = useQueryClient();
-  const [startAt, setStartAt] = useState("");
-  const [endAt, setEndAt] = useState("");
+  const form = useForm<BookingFormValues>({
+    defaultValues: {
+      startAt: "",
+      endAt: "",
+    },
+    resolver: zodResolver(bookingFormSchema),
+  });
+
   const mutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (values: BookingFormValues) =>
       createBooking({
         itemId: item.id,
-        startAt,
-        endAt,
+        startAt: values.startAt,
+        endAt: values.endAt,
       }),
     onSuccess: async () => {
-      setStartAt("");
-      setEndAt("");
+      form.reset();
       await queryClient.invalidateQueries({
         queryKey: itemQueryKeys.detail(item.id),
       });
     },
   });
-
-  const appError =
-    mutation.error instanceof AppError ? mutation.error : null;
-
-  const validationMessage = useMemo(() => {
-    if (!startAt || !endAt) {
-      return "Choose both a start and end time.";
-    }
-
-    if (new Date(startAt).getTime() >= new Date(endAt).getTime()) {
-      return "The end time must be after the start time.";
-    }
-
-    return null;
-  }, [endAt, startAt]);
 
   return (
     <Card className="grid gap-4">
@@ -76,58 +54,48 @@ export function CreateBookingForm({
           Request this item
         </h3>
         <p className="mt-2 text-sm leading-7 text-muted">
-          This call uses the selected user as the requester. Backend business
-          errors like duplicate or invalid booking windows are shown clearly.
+          This call uses the selected backend user as the requester.
         </p>
       </div>
 
       <form
         className="grid gap-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-
-          if (validationMessage) {
-            return;
-          }
-
-          mutation.mutate();
-        }}
+        onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
       >
-        <Field htmlFor={`booking-start-${item.id}`} label="Start">
+        <Field
+          error={form.formState.errors.startAt?.message}
+          htmlFor={`booking-start-${item.id}`}
+          label="Start"
+        >
           <Input
             disabled={mutation.isPending || !selectedUserId}
             id={`booking-start-${item.id}`}
             type="datetime-local"
-            value={startAt}
-            onChange={(event) => setStartAt(event.target.value)}
+            {...form.register("startAt")}
           />
         </Field>
 
-        <Field htmlFor={`booking-end-${item.id}`} label="End">
+        <Field
+          error={form.formState.errors.endAt?.message}
+          htmlFor={`booking-end-${item.id}`}
+          label="End"
+        >
           <Input
             disabled={mutation.isPending || !selectedUserId}
             id={`booking-end-${item.id}`}
             type="datetime-local"
-            value={endAt}
-            onChange={(event) => setEndAt(event.target.value)}
+            {...form.register("endAt")}
           />
         </Field>
 
-        {validationMessage ? (
-          <p className="text-sm text-danger">{validationMessage}</p>
+        {mutation.isError ? (
+          <AppErrorPanel
+            error={mutation.error}
+            fallbackMessage="Unable to create the booking right now."
+          />
         ) : null}
 
-        {appError ? (
-          <div className="grid gap-2">
-            <p className="text-sm font-medium text-danger">{appError.message}</p>
-            {renderErrorDetails(appError)}
-          </div>
-        ) : null}
-
-        <Button
-          disabled={!selectedUserId || mutation.isPending || Boolean(validationMessage)}
-          type="submit"
-        >
+        <Button disabled={!selectedUserId || mutation.isPending} type="submit">
           {mutation.isPending ? "Requesting..." : "Create booking"}
         </Button>
       </form>

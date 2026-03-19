@@ -1,5 +1,5 @@
 import { apiClient } from "@/src/shared/api";
-import type { ItemDraft } from "../model/item";
+import type { ItemDraft, ItemSearchRequest } from "../model/item";
 import {
   mapItemDraftToCreateItemRequest,
   mapItemDraftToUpdateItemRequest,
@@ -17,7 +17,11 @@ export async function getMyItems() {
   return items.map(mapItemDtoToItem);
 }
 
-export async function searchItems(text: string) {
+export async function searchItems({
+  text,
+  from = 0,
+  size = 20,
+}: ItemSearchRequest) {
   const normalizedText = text.trim();
 
   if (!normalizedText) {
@@ -27,6 +31,8 @@ export async function searchItems(text: string) {
   const items = await apiClient.get<ItemDto[]>("/items/search", {
     query: {
       text: normalizedText,
+      from,
+      size,
     },
   });
 
