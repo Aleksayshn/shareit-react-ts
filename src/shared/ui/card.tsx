@@ -9,7 +9,7 @@ interface CardProps extends HTMLAttributes<HTMLDivElement> {
 
 const toneClasses: Record<CardTone, string> = {
   default: "bg-surface-strong/94 border-border",
-  accent: "bg-[linear-gradient(135deg,#fff9ec_0%,#f4f0ff_100%)] border-[#cfc6ea]",
+  accent: "bg-[linear-gradient(135deg,#fffaf0_0%,#eef7f4_100%)] border-[#bfd7cf]",
 };
 
 export function Card({

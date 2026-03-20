@@ -4,6 +4,7 @@ const bookingRootKey = ["bookings"] as const;
 
 export const bookingQueryKeys = {
   all: bookingRootKey,
+  detail: (bookingId: string) => [...bookingRootKey, "detail", bookingId] as const,
   mine: (
     selectedUserId: string | null,
     state: BookingFilterState,

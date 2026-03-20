@@ -5,11 +5,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "ShareIt MVP",
+    default: "ShareIt",
     template: "%s | ShareIt",
   },
   description:
-    "ShareIt frontend foundation built with Next.js, TanStack Query, Zustand, and a feature-sliced structure.",
+    "Share useful things with others and borrow what you need.",
 };
 
 export default function RootLayout({

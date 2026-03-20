@@ -1,134 +1,141 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
-import { createBooking } from "@/src/entities/booking";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
+import {
+  bookingFormSchema,
+  bookingQueryKeys,
+  createBooking,
+  type BookingFormValues,
+} from "@/src/entities/booking";
 import { itemQueryKeys, type Item } from "@/src/entities/item";
-import { AppError } from "@/src/shared/lib/errors";
-import { Button, Card, Field, Input } from "@/src/shared/ui";
+import {
+  AppErrorPanel,
+  Button,
+  Card,
+  Field,
+  Input,
+  LinkButton,
+} from "@/src/shared/ui";
 
 interface CreateBookingFormProps {
   item: Item;
   selectedUserId: string | null;
-}
-
-function renderErrorDetails(error: AppError) {
-  if (error.fieldErrors.length === 0) {
-    return null;
-  }
-
-  return (
-    <ul className="grid gap-1 text-sm text-danger">
-      {error.fieldErrors.map((fieldError) => (
-        <li key={`${fieldError.field}-${fieldError.message}`}>
-          {fieldError.field}: {fieldError.message}
-        </li>
-      ))}
-    </ul>
-  );
+  id?: string;
+  tone?: "default" | "accent";
 }
 
 export function CreateBookingForm({
   item,
   selectedUserId,
+  id,
+  tone = "default",
 }: CreateBookingFormProps) {
   const queryClient = useQueryClient();
-  const [startAt, setStartAt] = useState("");
-  const [endAt, setEndAt] = useState("");
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const form = useForm<BookingFormValues>({
+    defaultValues: {
+      startAt: "",
+      endAt: "",
+    },
+    resolver: zodResolver(bookingFormSchema),
+  });
+
   const mutation = useMutation({
-    mutationFn: () =>
+    onMutate: () => {
+      setSuccessMessage(null);
+    },
+    mutationFn: (values: BookingFormValues) =>
       createBooking({
         itemId: item.id,
-        startAt,
-        endAt,
+        startAt: values.startAt,
+        endAt: values.endAt,
       }),
     onSuccess: async () => {
-      setStartAt("");
-      setEndAt("");
-      await queryClient.invalidateQueries({
-        queryKey: itemQueryKeys.detail(item.id),
-      });
+      form.reset();
+      setSuccessMessage(
+        "Your request has been sent. You can follow updates in Borrowing.",
+      );
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: itemQueryKeys.detail(item.id),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: bookingQueryKeys.all,
+        }),
+      ]);
     },
   });
 
-  const appError =
-    mutation.error instanceof AppError ? mutation.error : null;
-
-  const validationMessage = useMemo(() => {
-    if (!startAt || !endAt) {
-      return "Choose both a start and end time.";
-    }
-
-    if (new Date(startAt).getTime() >= new Date(endAt).getTime()) {
-      return "The end time must be after the start time.";
-    }
-
-    return null;
-  }, [endAt, startAt]);
-
   return (
-    <Card className="grid gap-4">
+    <Card className="grid gap-4" id={id} tone={tone}>
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent">
-          Booking
+          Borrow this item
         </p>
         <h3 className="mt-3 text-2xl font-semibold text-foreground">
-          Request this item
+          Send a borrow request
         </h3>
         <p className="mt-2 text-sm leading-7 text-muted">
-          This call uses the selected user as the requester. Backend business
-          errors like duplicate or invalid booking windows are shown clearly.
+          {selectedUserId
+            ? "Choose the dates you'd like to borrow it."
+            : "Choose a profile first to send a request."}
         </p>
       </div>
 
+      {successMessage ? (
+        <div className="grid gap-3 rounded-3xl border border-accent/20 bg-accent/8 px-4 py-4">
+          <p className="text-sm font-semibold text-foreground">Request sent</p>
+          <p className="text-sm leading-7 text-muted">{successMessage}</p>
+          <div>
+            <LinkButton href="/bookings" size="sm">
+              Open Borrowing
+            </LinkButton>
+          </div>
+        </div>
+      ) : null}
+
       <form
         className="grid gap-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-
-          if (validationMessage) {
-            return;
-          }
-
-          mutation.mutate();
-        }}
+        onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
       >
-        <Field htmlFor={`booking-start-${item.id}`} label="Start">
+        <Field
+          error={form.formState.errors.startAt?.message}
+          htmlFor={`booking-start-${item.id}`}
+          label="From"
+        >
           <Input
             disabled={mutation.isPending || !selectedUserId}
             id={`booking-start-${item.id}`}
             type="datetime-local"
-            value={startAt}
-            onChange={(event) => setStartAt(event.target.value)}
+            {...form.register("startAt")}
           />
         </Field>
 
-        <Field htmlFor={`booking-end-${item.id}`} label="End">
+        <Field
+          error={form.formState.errors.endAt?.message}
+          htmlFor={`booking-end-${item.id}`}
+          label="Until"
+        >
           <Input
             disabled={mutation.isPending || !selectedUserId}
             id={`booking-end-${item.id}`}
             type="datetime-local"
-            value={endAt}
-            onChange={(event) => setEndAt(event.target.value)}
+            {...form.register("endAt")}
           />
         </Field>
 
-        {validationMessage ? (
-          <p className="text-sm text-danger">{validationMessage}</p>
+        {mutation.isError ? (
+          <AppErrorPanel
+            error={mutation.error}
+            fallbackMessage="We couldn't send your request right now."
+          />
         ) : null}
 
-        {appError ? (
-          <div className="grid gap-2">
-            <p className="text-sm font-medium text-danger">{appError.message}</p>
-            {renderErrorDetails(appError)}
-          </div>
-        ) : null}
-
-        <Button
-          disabled={!selectedUserId || mutation.isPending || Boolean(validationMessage)}
-          type="submit"
-        >
-          {mutation.isPending ? "Requesting..." : "Create booking"}
+        <Button disabled={!selectedUserId || mutation.isPending} type="submit">
+          {mutation.isPending ? "Sending..." : "Send request"}
         </Button>
       </form>
     </Card>

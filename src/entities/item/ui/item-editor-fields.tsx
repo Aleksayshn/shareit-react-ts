@@ -36,7 +36,7 @@ export function ItemEditorFields({
         <Textarea
           disabled={disabled}
           id={`${idPrefix}-description`}
-          placeholder="Describe what makes this item useful to other sharers."
+          placeholder="Share what it is, what condition it's in, and anything borrowers should know."
           rows={4}
           value={draft.description}
           onChange={(event) =>
@@ -60,8 +60,8 @@ export function ItemEditorFields({
             })
           }
         >
-          <option value="true">Available for booking</option>
-          <option value="false">Unavailable</option>
+          <option value="true">Available to borrow</option>
+          <option value="false">Not available right now</option>
         </Select>
       </Field>
     </div>

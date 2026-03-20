@@ -2,12 +2,14 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { AddCommentForm, CreateBookingForm } from "@/src/features";
-import { getItemDetails, itemQueryKeys } from "@/src/entities/item";
+import { getItemDetails, itemQueryKeys, type Item } from "@/src/entities/item";
+import { cn } from "@/src/shared/lib";
 import { AppError } from "@/src/shared/lib/errors";
 import { useActiveUserStore } from "@/src/shared/model";
 import {
   Card,
   ErrorState,
+  LinkButton,
   LoadingState,
 } from "@/src/shared/ui";
 
@@ -17,7 +19,7 @@ interface ItemDetailsContentProps {
 
 function formatBookingMoment(value: string | null) {
   if (!value) {
-    return "Not provided";
+    return "Not set";
   }
 
   const formatted = new Date(value);
@@ -30,6 +32,21 @@ function formatBookingMoment(value: string | null) {
     dateStyle: "medium",
     timeStyle: "short",
   }).format(formatted);
+}
+
+function formatBookingStatus(value: string | null) {
+  switch (value) {
+    case "WAITING":
+      return "Pending";
+    case "APPROVED":
+      return "Approved";
+    case "REJECTED":
+      return "Declined";
+    case "CANCELED":
+      return "Canceled";
+    default:
+      return "Not set";
+  }
 }
 
 function BookingPreviewCard({
@@ -52,21 +69,17 @@ function BookingPreviewCard({
       </p>
       <dl className="mt-3 grid gap-2 text-sm text-muted">
         <div className="flex justify-between gap-4">
-          <dt>Booking ID</dt>
-          <dd className="font-medium text-foreground">{booking.id}</dd>
+          <dt>Requested by</dt>
+          <dd className="font-medium text-foreground">Profile #{booking.bookerId}</dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt>Booker</dt>
-          <dd className="font-medium text-foreground">{booking.bookerId}</dd>
-        </div>
-        <div className="flex justify-between gap-4">
-          <dt>Start</dt>
+          <dt>From</dt>
           <dd className="font-medium text-foreground">
             {formatBookingMoment(booking.startAt)}
           </dd>
         </div>
         <div className="flex justify-between gap-4">
-          <dt>End</dt>
+          <dt>Until</dt>
           <dd className="font-medium text-foreground">
             {formatBookingMoment(booking.endAt)}
           </dd>
@@ -74,11 +87,102 @@ function BookingPreviewCard({
         <div className="flex justify-between gap-4">
           <dt>Status</dt>
           <dd className="font-medium text-foreground">
-            {booking.status ?? "Not provided"}
+            {formatBookingStatus(booking.status)}
           </dd>
         </div>
       </dl>
     </div>
+  );
+}
+
+function BorrowActionPanel({
+  item,
+  isOwner,
+  selectedUserId,
+}: {
+  item: Item;
+  isOwner: boolean;
+  selectedUserId: string | null;
+}) {
+  if (!selectedUserId) {
+    return (
+      <Card className="grid gap-4" id="borrow" tone="accent">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent">
+            Borrow this item
+          </p>
+          <h3 className="mt-3 text-2xl font-semibold text-foreground">
+            Choose a profile to continue
+          </h3>
+          <p className="mt-2 text-sm leading-7 text-muted">
+            Borrow requests are sent from your current profile, so choose one
+            before picking dates.
+          </p>
+        </div>
+        <div>
+          <LinkButton href="/users" size="sm">
+            Choose profile
+          </LinkButton>
+        </div>
+      </Card>
+    );
+  }
+
+  if (isOwner) {
+    return (
+      <Card className="grid gap-4" id="borrow">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent">
+            Your listing
+          </p>
+          <h3 className="mt-3 text-2xl font-semibold text-foreground">
+            You cannot borrow your own item
+          </h3>
+          <p className="mt-2 text-sm leading-7 text-muted">
+            This listing belongs to your current profile, so the borrow form is
+            hidden here.
+          </p>
+        </div>
+        <div>
+          <LinkButton href="/items" size="sm" variant="secondary">
+            Manage my listings
+          </LinkButton>
+        </div>
+      </Card>
+    );
+  }
+
+  if (!item.isAvailable) {
+    return (
+      <Card className="grid gap-4" id="borrow">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-[0.22em] text-danger">
+            Unavailable
+          </p>
+          <h3 className="mt-3 text-2xl font-semibold text-foreground">
+            This item is not open for requests
+          </h3>
+          <p className="mt-2 text-sm leading-7 text-muted">
+            The lender has marked it as unavailable, so new borrow requests are
+            turned off for now.
+          </p>
+        </div>
+        <div>
+          <LinkButton href="/" size="sm" variant="secondary">
+            Explore other items
+          </LinkButton>
+        </div>
+      </Card>
+    );
+  }
+
+  return (
+    <CreateBookingForm
+      id="borrow"
+      item={item}
+      selectedUserId={selectedUserId}
+      tone="accent"
+    />
   );
 }
 
@@ -92,29 +196,33 @@ export function ItemDetailsContent({ itemId }: ItemDetailsContentProps) {
   const errorMessage =
     itemQuery.error instanceof AppError
       ? itemQuery.error.message
-      : "Unable to load this item right now.";
+      : "We couldn't load this listing right now.";
 
   const item = itemQuery.data;
   const isOwner = selectedUserId !== null && item?.ownerId === selectedUserId;
-  const showBookingCta =
-    Boolean(item?.isAvailable) && Boolean(selectedUserId) && !isOwner;
   const hasOwnerBookingPreview = Boolean(item?.lastBooking || item?.nextBooking);
+  const hasSecondaryColumn = Boolean(isOwner && hasOwnerBookingPreview);
 
   return (
     <>
       {itemQuery.isPending ? (
-        <LoadingState message="Loading item details..." />
+        <LoadingState message="Loading listing..." />
       ) : null}
 
       {itemQuery.isError ? (
         <ErrorState
           description={errorMessage}
-          title="Item error"
+          title="Listing unavailable"
         />
       ) : null}
 
       {item ? (
-        <div className="grid gap-5 lg:grid-cols-[1.25fr_0.95fr]">
+        <div
+          className={cn(
+            "grid gap-5",
+            hasSecondaryColumn ? "lg:grid-cols-[1.25fr_0.95fr]" : undefined,
+          )}
+        >
           <div className="grid gap-5">
             <Card className="grid gap-4">
               <div className="flex flex-wrap items-center gap-3">
@@ -128,30 +236,38 @@ export function ItemDetailsContent({ itemId }: ItemDetailsContentProps) {
                       : "bg-danger/12 text-danger"
                   }`}
                 >
-                  {item.isAvailable ? "Available" : "Unavailable"}
+                  {item.isAvailable ? "Available now" : "Not available"}
                 </span>
               </div>
               <p className="text-base leading-8 text-muted">{item.description}</p>
 
-              {!selectedUserId ? (
-                <p className="text-sm leading-7 text-muted">
-                  Set an active user in the header to create bookings or add
-                  comments.
-                </p>
-              ) : null}
-
               {item.ownerId ? (
                 <p className="text-sm leading-7 text-muted">
-                  Owner user ID:{" "}
-                  <span className="font-medium text-foreground">{item.ownerId}</span>
+                  {isOwner ? (
+                    "This listing belongs to your current profile."
+                  ) : (
+                    <>
+                      Shared by{" "}
+                      <span className="font-medium text-foreground">
+                        profile #{item.ownerId}
+                      </span>
+                      .
+                    </>
+                  )}
                 </p>
               ) : null}
             </Card>
 
+            <BorrowActionPanel
+              isOwner={isOwner}
+              item={item}
+              selectedUserId={selectedUserId}
+            />
+
             <Card className="grid gap-4">
               <div>
                 <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent">
-                  Comments
+                  Borrower notes
                 </p>
                 <h3 className="mt-3 text-2xl font-semibold text-foreground">
                   What users said after borrowing
@@ -160,8 +276,8 @@ export function ItemDetailsContent({ itemId }: ItemDetailsContentProps) {
 
               {item.comments.length === 0 ? (
                 <p className="text-sm leading-7 text-muted">
-                  No comments yet. The form below still lets the backend enforce
-                  whether the current user is allowed to add one.
+                  No notes yet. Borrowers can leave feedback after an eligible
+                  completed request.
                 </p>
               ) : (
                 <div className="grid gap-3">
@@ -174,7 +290,7 @@ export function ItemDetailsContent({ itemId }: ItemDetailsContentProps) {
                         {comment.text}
                       </p>
                       <p className="mt-2 text-xs uppercase tracking-[0.18em] text-muted">
-                        {comment.authorName} - {comment.createdAt}
+                        {comment.authorName} - {formatBookingMoment(comment.createdAt)}
                       </p>
                     </div>
                   ))}
@@ -185,67 +301,41 @@ export function ItemDetailsContent({ itemId }: ItemDetailsContentProps) {
             <AddCommentForm itemId={item.id} selectedUserId={selectedUserId} />
           </div>
 
-          <div className="grid gap-5">
-            {isOwner && hasOwnerBookingPreview ? (
-              <Card className="grid gap-4">
-                <div>
-                  <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent">
-                    Booking preview
-                  </p>
-                  <h3 className="mt-3 text-2xl font-semibold text-foreground">
-                    Owner-only booking snapshot
-                  </h3>
-                  <p className="mt-2 text-sm leading-7 text-muted">
-                    This block only appears for the item owner when preview data
-                    is included in the item details response.
-                  </p>
-                </div>
+          {hasSecondaryColumn ? (
+            <div className="grid gap-5">
+              {isOwner && hasOwnerBookingPreview ? (
+                <Card className="grid gap-4">
+                  <div>
+                    <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent">
+                      Request preview
+                    </p>
+                    <h3 className="mt-3 text-2xl font-semibold text-foreground">
+                      Recent and upcoming requests
+                    </h3>
+                    <p className="mt-2 text-sm leading-7 text-muted">
+                      When request timing is available, you&apos;ll see the most recent
+                      and next request for this listing here.
+                    </p>
+                  </div>
 
-                <div className="grid gap-3">
-                  {item.lastBooking ? (
-                    <BookingPreviewCard
-                      booking={item.lastBooking}
-                      title="Last booking"
-                    />
-                  ) : null}
-                  {item.nextBooking ? (
-                    <BookingPreviewCard
-                      booking={item.nextBooking}
-                      title="Next booking"
-                    />
-                  ) : null}
-                </div>
-              </Card>
-            ) : null}
-
-            {showBookingCta ? (
-              <CreateBookingForm item={item} selectedUserId={selectedUserId} />
-            ) : null}
-
-            {!item.isAvailable ? (
-              <Card>
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-danger">
-                  Booking unavailable
-                </p>
-                <p className="mt-3 text-sm leading-7 text-muted">
-                  This item is currently unavailable, so the booking CTA stays
-                  hidden.
-                </p>
-              </Card>
-            ) : null}
-
-            {isOwner ? (
-              <Card>
-                <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent">
-                  Owner mode
-                </p>
-                <p className="mt-3 text-sm leading-7 text-muted">
-                  You own this item, so booking controls are hidden and the page
-                  focuses on comments plus booking preview data instead.
-                </p>
-              </Card>
-            ) : null}
-          </div>
+                  <div className="grid gap-3">
+                    {item.lastBooking ? (
+                      <BookingPreviewCard
+                        booking={item.lastBooking}
+                        title="Most recent request"
+                      />
+                    ) : null}
+                    {item.nextBooking ? (
+                      <BookingPreviewCard
+                        booking={item.nextBooking}
+                        title="Next upcoming request"
+                      />
+                    ) : null}
+                  </div>
+                </Card>
+              ) : null}
+            </div>
+          ) : null}
         </div>
       ) : null}
     </>

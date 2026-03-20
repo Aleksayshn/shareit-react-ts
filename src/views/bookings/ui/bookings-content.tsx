@@ -21,10 +21,13 @@ import { useActiveUserStore } from "@/src/shared/model";
 import {
   Card,
   EmptyState,
+  ExpandableCard,
   ErrorState,
   Field,
   LoadingState,
+  SectionHeader,
   Select,
+  StatCard,
 } from "@/src/shared/ui";
 import { BookingList } from "@/src/widgets";
 
@@ -131,10 +134,13 @@ export function BookingsContent({ mode }: BookingsContentProps) {
   const errorMessage =
     bookingsQuery.error instanceof AppError
       ? bookingsQuery.error.message
-      : "Unable to load bookings right now.";
+      : mode === "mine"
+        ? "We couldn't load your borrowing activity right now."
+        : "We couldn't load your lending requests right now.";
+  const bookings = bookingsQuery.data ?? [];
 
   const pagination = useMemo(() => {
-    const count = bookingsQuery.data?.length ?? 0;
+    const count = bookings.length;
 
     return {
       from,
@@ -148,77 +154,197 @@ export function BookingsContent({ mode }: BookingsContentProps) {
         from: from + size,
       }),
     };
-  }, [bookingsQuery.data?.length, buildHref, from, size]);
+  }, [bookings.length, buildHref, from, size]);
 
   const emptyTitle =
-    mode === "mine" ? "No bookings found" : "No booking requests found";
+    mode === "mine" ? "No borrowing activity yet" : "No lending requests yet";
   const emptyDescription =
     mode === "mine"
-      ? "Try another state filter or move through pages to find older bookings."
-      : "Your items do not have matching requests for this filter yet.";
+      ? "When you request to borrow something, it will appear here."
+      : "Requests for your listings will appear here when other people want to borrow them.";
+  const pendingCount = bookings.filter((booking) => booking.status === "WAITING").length;
+  const approvedCount = bookings.filter((booking) => booking.status === "APPROVED").length;
+  const declinedCount = bookings.filter((booking) => booking.status === "REJECTED").length;
 
   return (
     <>
       {!hasHydrated ? (
-        <LoadingState message="Restoring the active sharer..." />
+        <LoadingState message="Loading your profile..." />
       ) : null}
 
       {hasHydrated && !selectedUserId ? (
         <EmptyState
-          description="Booking pages depend on the active user store because the API client injects `X-Sharer-User-Id` from the selected sharer. Use the header control to set it."
-          title="No active sharer selected"
+          description={
+            mode === "mine"
+              ? "Choose a current profile in the header to view the requests this person has made."
+              : "Choose a current profile in the header to review requests for that person's listings."
+          }
+          title="Choose a profile"
         />
       ) : null}
 
       {selectedUserId ? (
-        <Card className="grid gap-4 lg:grid-cols-[1fr_220px]">
-          <FilterBookingsByState value={state} />
-          <Field htmlFor="booking-page-size" label="Page size">
-            <Select
-              id="booking-page-size"
-              value={String(size)}
-              onChange={(event) => {
-                router.push(
-                  buildHref({
-                    size: Number(event.target.value),
-                    from: 0,
-                  }),
-                );
-              }}
+        <div className="grid gap-6">
+          <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr]">
+            <Card
+              className="grid gap-4"
+              tone={mode === "owner" && pendingCount > 0 ? "accent" : "default"}
             >
-              {bookingPageSizeOptions.map((pageSize) => (
-                <option key={pageSize} value={pageSize}>
-                  {pageSize} per page
-                </option>
-              ))}
-            </Select>
-          </Field>
-        </Card>
-      ) : null}
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
+                  {mode === "mine" ? "Requests you sent" : "Requests from others"}
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
+                  {mode === "mine"
+                    ? "Keep track of what you want to borrow"
+                    : "Manage incoming requests with confidence"}
+                </h2>
+              </div>
+              <p className="text-sm leading-7 text-muted">
+                {mode === "mine"
+                  ? "Check the latest status of your requests, revisit listing details, and keep an eye on upcoming dates."
+                  : "See who wants to borrow your items and respond quickly to anything still waiting for a decision."}
+              </p>
+            </Card>
 
-      {bookingsQuery.isPending ? (
-        <LoadingState message="Loading bookings..." />
-      ) : null}
+            <StatCard
+              description="Requests shown on this page right now."
+              label="On this page"
+              value={bookingsQuery.isSuccess ? bookings.length : "--"}
+            />
+            <StatCard
+              description={
+                mode === "mine"
+                  ? "Requests waiting for the lender to reply."
+                  : "Requests still waiting for your response."
+              }
+              label={mode === "mine" ? "Pending" : "Needs review"}
+              tone={pendingCount > 0 ? "accent" : "default"}
+              value={bookingsQuery.isSuccess ? pendingCount : "--"}
+            />
+            <StatCard
+              description={
+                mode === "mine"
+                  ? "Requests approved for borrowing."
+                  : "Requests you have already approved."
+              }
+              label="Approved"
+              value={bookingsQuery.isSuccess ? approvedCount : "--"}
+            />
+          </div>
 
-      {bookingsQuery.isError ? (
-        <ErrorState
-          description={errorMessage}
-          title="Bookings error"
-        />
-      ) : null}
+          <Card className="grid gap-4 lg:grid-cols-[1fr_220px]">
+            <div className="grid gap-4">
+              <SectionHeader
+                description={
+                  mode === "mine"
+                    ? "Filter the requests you sent so it is easy to spot what is pending, approved, upcoming, or past."
+                    : "Filter incoming requests so you can focus on what needs attention first."
+                }
+                title={mode === "mine" ? "Filter your borrowing activity" : "Filter incoming requests"}
+              />
+              <FilterBookingsByState value={state} />
+            </div>
+            <Field htmlFor="booking-page-size" label="Results per page">
+              <Select
+                id="booking-page-size"
+                value={String(size)}
+                onChange={(event) => {
+                  router.push(
+                    buildHref({
+                      size: Number(event.target.value),
+                      from: 0,
+                    }),
+                  );
+                }}
+              >
+                {bookingPageSizeOptions.map((pageSize) => (
+                  <option key={pageSize} value={pageSize}>
+                    {pageSize} per page
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </Card>
 
-      {bookingsQuery.isSuccess && selectedUserId ? (
-        <BookingList
-          bookings={bookingsQuery.data}
-          emptyDescription={emptyDescription}
-          emptyTitle={emptyTitle}
-          pagination={pagination}
-          renderActions={
-            mode === "owner"
-              ? (booking) => <OwnerBookingActions booking={booking} />
-              : undefined
-          }
-        />
+          {mode === "owner" && pendingCount > 0 ? (
+            <ExpandableCard
+              closeLabel="Hide reminder"
+              defaultOpen
+              description={`You have ${pendingCount} pending request${pendingCount === 1 ? "" : "s"} waiting for a decision on this page.`}
+              eyebrow="Needs attention"
+              openLabel="Show reminder"
+              title="Respond to pending requests"
+              tone="accent"
+            >
+              <p className="text-sm leading-7 text-muted">
+                Approve requests you can accommodate and decline anything that
+                does not work for your availability.
+              </p>
+            </ExpandableCard>
+          ) : null}
+
+          {mode === "mine" && bookingsQuery.isSuccess ? (
+            <Card className="grid gap-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
+                Status overview
+              </p>
+              <p className="text-sm leading-7 text-muted">
+                {pendingCount > 0
+                  ? `${pendingCount} request${pendingCount === 1 ? "" : "s"} are still waiting for a reply.`
+                  : approvedCount > 0
+                    ? `${approvedCount} request${approvedCount === 1 ? "" : "s"} are already approved.`
+                    : declinedCount > 0
+                      ? `${declinedCount} request${declinedCount === 1 ? "" : "s"} were declined.`
+                      : "Once you request to borrow something, its status will appear here."}
+              </p>
+            </Card>
+          ) : null}
+
+          <div className="grid gap-4">
+            <SectionHeader
+              description={
+                mode === "mine"
+                  ? "These are the requests sent by your current profile."
+                  : "These are the requests other people have made for your listings."
+              }
+              eyebrow={mode === "mine" ? "Borrowing" : "Lending"}
+              title={mode === "mine" ? "Requests you sent" : "Requests from others"}
+            />
+
+            {bookingsQuery.isPending ? (
+              <LoadingState
+                message={
+                  mode === "mine"
+                    ? "Loading your borrowing activity..."
+                    : "Loading lending requests..."
+                }
+              />
+            ) : null}
+
+            {bookingsQuery.isError ? (
+              <ErrorState
+                description={errorMessage}
+                title={mode === "mine" ? "Borrowing unavailable" : "Lending unavailable"}
+              />
+            ) : null}
+
+            {bookingsQuery.isSuccess ? (
+              <BookingList
+                mode={mode}
+                bookings={bookings}
+                emptyDescription={emptyDescription}
+                emptyTitle={emptyTitle}
+                pagination={pagination}
+                renderActions={
+                  mode === "owner"
+                    ? (booking) => <OwnerBookingActions booking={booking} />
+                    : undefined
+                }
+              />
+            ) : null}
+          </div>
+        </div>
       ) : null}
     </>
   );

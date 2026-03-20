@@ -19,6 +19,12 @@ export interface ItemDraft {
   available: boolean;
 }
 
+export interface ItemSearchRequest {
+  text: string;
+  from?: number;
+  size?: number;
+}
+
 export const emptyItemDraft: ItemDraft = {
   name: "",
   description: "",

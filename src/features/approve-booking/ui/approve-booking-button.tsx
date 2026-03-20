@@ -45,7 +45,7 @@ export function ApproveBookingButton({
         title={errorMessage ?? undefined}
         onClick={() => mutation.mutate()}
       >
-        {mutation.isPending ? "Approving..." : "Approve"}
+        {mutation.isPending ? "Approving..." : "Approve request"}
       </Button>
       {errorMessage ? <p className="text-sm text-danger">{errorMessage}</p> : null}
     </div>

@@ -43,7 +43,7 @@ export function normalizeAppError(error: unknown) {
     return new AppError({
       code: "NETWORK_ERROR",
       message:
-        "Unable to reach the ShareIt API. Check your connection and try again.",
+        "We couldn't connect right now. Check your connection and try again.",
       cause: error,
       isRetryable: true,
     });

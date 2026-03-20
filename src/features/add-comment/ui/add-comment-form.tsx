@@ -1,31 +1,15 @@
 "use client";
 
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
-import { addComment } from "@/src/entities/comment";
+import { addComment, commentFormSchema, type CommentFormValues } from "@/src/entities/comment";
 import { itemQueryKeys } from "@/src/entities/item";
-import { AppError } from "@/src/shared/lib/errors";
-import { Button, Card, Field, Textarea } from "@/src/shared/ui";
+import { AppErrorPanel, Button, Card, Field, Textarea } from "@/src/shared/ui";
 
 interface AddCommentFormProps {
   itemId: string;
   selectedUserId: string | null;
-}
-
-function renderErrorDetails(error: AppError) {
-  if (error.fieldErrors.length === 0) {
-    return null;
-  }
-
-  return (
-    <ul className="grid gap-1 text-sm text-danger">
-      {error.fieldErrors.map((fieldError) => (
-        <li key={`${fieldError.field}-${fieldError.message}`}>
-          {fieldError.field}: {fieldError.message}
-        </li>
-      ))}
-    </ul>
-  );
 }
 
 export function AddCommentForm({
@@ -33,80 +17,79 @@ export function AddCommentForm({
   selectedUserId,
 }: AddCommentFormProps) {
   const queryClient = useQueryClient();
-  const [text, setText] = useState("");
+  const form = useForm<CommentFormValues>({
+    defaultValues: {
+      text: "",
+    },
+    resolver: zodResolver(commentFormSchema),
+  });
+
   const mutation = useMutation({
-    mutationFn: () => addComment(itemId, { text }),
+    mutationFn: (values: CommentFormValues) => addComment(itemId, values),
     onSuccess: async () => {
-      setText("");
+      form.reset();
       await queryClient.invalidateQueries({
         queryKey: itemQueryKeys.detail(itemId),
       });
     },
   });
 
-  const appError =
-    mutation.error instanceof AppError ? mutation.error : null;
-
   return (
     <Card className="grid gap-4">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent">
-          Add comment
+          Leave a note
         </p>
         <h3 className="mt-3 text-2xl font-semibold text-foreground">
-          Share your experience
+          Share how it went
         </h3>
         <p className="mt-2 text-sm leading-7 text-muted">
-          The backend decides whether the selected user is allowed to comment.
-          If the business rule fails, the API message is shown directly.
+          If you&apos;ve borrowed this item before, you can leave a note for future borrowers.
         </p>
       </div>
 
       <form
         className="grid gap-4"
-        onSubmit={(event) => {
-          event.preventDefault();
-          mutation.mutate();
-        }}
+        onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
       >
         <Field
-          description="Comments usually become valid after a completed booking."
+          description="Notes are available after an eligible completed request."
+          error={form.formState.errors.text?.message}
           htmlFor={`comment-${itemId}`}
-          label="Comment"
+          label="Your note"
         >
           <Textarea
             disabled={mutation.isPending || !selectedUserId}
             id={`comment-${itemId}`}
             placeholder={
               selectedUserId
-                ? "What was it like to use this item?"
-                : "Select a user to leave a comment."
+                ? "What should the next borrower know?"
+                : "Choose a profile to leave a note."
             }
             rows={4}
-            value={text}
-            onChange={(event) => setText(event.target.value)}
+            {...form.register("text")}
           />
         </Field>
 
-        {appError ? (
-          <div className="grid gap-2">
-            <p className="text-sm font-medium text-danger">{appError.message}</p>
-            {renderErrorDetails(appError)}
-          </div>
+        {mutation.isError ? (
+          <AppErrorPanel
+            error={mutation.error}
+            fallbackMessage="We couldn't add your note right now."
+          />
         ) : null}
 
         <div className="flex flex-wrap gap-3">
           <Button
-            disabled={!selectedUserId || mutation.isPending || !text.trim()}
+            disabled={!selectedUserId || mutation.isPending}
             type="submit"
           >
-            {mutation.isPending ? "Sending..." : "Add comment"}
+            {mutation.isPending ? "Posting..." : "Post note"}
           </Button>
           <Button
-            disabled={mutation.isPending || !text}
+            disabled={mutation.isPending}
             type="button"
             variant="ghost"
-            onClick={() => setText("")}
+            onClick={() => form.reset()}
           >
             Clear
           </Button>

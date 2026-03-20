@@ -4,12 +4,12 @@ export const bookingFilterOptions: Array<{
   value: BookingFilterState;
   label: string;
 }> = [
-  { value: "ALL", label: "All states" },
-  { value: "WAITING", label: "Waiting" },
+  { value: "ALL", label: "All activity" },
+  { value: "WAITING", label: "Pending" },
   { value: "APPROVED", label: "Approved" },
-  { value: "REJECTED", label: "Rejected" },
-  { value: "CURRENT", label: "Current" },
-  { value: "FUTURE", label: "Future" },
+  { value: "REJECTED", label: "Declined" },
+  { value: "CURRENT", label: "Happening now" },
+  { value: "FUTURE", label: "Upcoming" },
   { value: "PAST", label: "Past" },
 ];
 
