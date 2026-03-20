@@ -20,18 +20,18 @@ export function UserDetailsContent({ userId }: UserDetailsContentProps) {
   const errorMessage =
     userQuery.error instanceof AppError
       ? userQuery.error.message
-      : "Unable to load this user right now.";
+      : "We couldn't load this profile right now.";
 
   return (
     <>
       {userQuery.isPending ? (
-        <LoadingState message="Loading user details..." />
+        <LoadingState message="Loading profile..." />
       ) : null}
 
       {userQuery.isError ? (
         <ErrorState
           description={errorMessage}
-          title="User error"
+          title="Profile unavailable"
         />
       ) : null}
 

@@ -48,7 +48,7 @@ export function UpdateUserForm({ user }: UpdateUserFormProps) {
   if (!isEditing) {
     return (
       <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>
-        Edit user
+        Edit profile
       </Button>
     );
   }
@@ -85,13 +85,13 @@ export function UpdateUserForm({ user }: UpdateUserFormProps) {
         {mutation.isError ? (
           <AppErrorPanel
             error={mutation.error}
-            fallbackMessage="Unable to save the user right now."
+            fallbackMessage="We couldn't save this profile right now."
           />
         ) : null}
 
         <div className="flex flex-wrap gap-3">
           <Button disabled={mutation.isPending} size="sm" type="submit">
-            {mutation.isPending ? "Saving..." : "Save"}
+            {mutation.isPending ? "Saving..." : "Save changes"}
           </Button>
           <Button
             disabled={mutation.isPending}

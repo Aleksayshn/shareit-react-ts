@@ -50,7 +50,7 @@ export function UpdateItemForm({ item }: UpdateItemFormProps) {
   if (!isEditing) {
     return (
       <Button size="sm" variant="ghost" onClick={() => setIsEditing(true)}>
-        Edit item
+        Edit listing
       </Button>
     );
   }
@@ -96,8 +96,8 @@ export function UpdateItemForm({ item }: UpdateItemFormProps) {
               value={field.value ? "true" : "false"}
               onChange={(event) => field.onChange(event.target.value === "true")}
             >
-              <option value="true">Available for booking</option>
-              <option value="false">Unavailable</option>
+              <option value="true">Available to borrow</option>
+              <option value="false">Not available right now</option>
             </Select>
           )}
         />
@@ -106,13 +106,13 @@ export function UpdateItemForm({ item }: UpdateItemFormProps) {
       {mutation.isError ? (
         <AppErrorPanel
           error={mutation.error}
-          fallbackMessage="Unable to update the item right now."
+          fallbackMessage="We couldn't save this listing right now."
         />
       ) : null}
 
       <div className="flex flex-wrap gap-3">
         <Button disabled={mutation.isPending} size="sm" type="submit">
-          {mutation.isPending ? "Saving..." : "Save"}
+          {mutation.isPending ? "Saving..." : "Save changes"}
         </Button>
         <Button
           disabled={mutation.isPending}

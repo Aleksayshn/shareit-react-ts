@@ -9,6 +9,14 @@ const statusClasses: Record<BookingStatus, string> = {
   UNKNOWN: "bg-[#e6e0d7] text-[#5f5750]",
 };
 
+const statusLabels: Record<BookingStatus, string> = {
+  WAITING: "Pending",
+  APPROVED: "Approved",
+  REJECTED: "Declined",
+  CANCELED: "Canceled",
+  UNKNOWN: "Unknown",
+};
+
 interface BookingStatusBadgeProps {
   status: BookingStatus;
 }
@@ -21,7 +29,7 @@ export function BookingStatusBadge({ status }: BookingStatusBadgeProps) {
         statusClasses[status],
       )}
     >
-      {status}
+      {statusLabels[status]}
     </span>
   );
 }

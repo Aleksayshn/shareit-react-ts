@@ -6,7 +6,11 @@ import { useForm } from "react-hook-form";
 import { createUser, userFormSchema, userQueryKeys, type UserFormValues } from "@/src/entities/user";
 import { Button, Card, Field, Input, AppErrorPanel } from "@/src/shared/ui";
 
-export function CreateUserForm() {
+interface CreateUserFormProps {
+  framed?: boolean;
+}
+
+export function CreateUserForm({ framed = true }: CreateUserFormProps) {
   const queryClient = useQueryClient();
   const form = useForm<UserFormValues>({
     defaultValues: {
@@ -26,15 +30,18 @@ export function CreateUserForm() {
     },
   });
 
-  return (
-    <Card className="grid gap-5">
+  const content = (
+    <>
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent">
-          Create user
+          New profile
         </p>
         <h2 className="mt-3 text-2xl font-semibold text-foreground">
-          Add a user from the real API
+          Create a profile
         </h2>
+        <p className="mt-2 text-sm leading-7 text-muted">
+          Profiles let people share items and request to borrow them.
+        </p>
       </div>
 
       <form
@@ -69,13 +76,13 @@ export function CreateUserForm() {
         {mutation.isError ? (
           <AppErrorPanel
             error={mutation.error}
-            fallbackMessage="Unable to create the user right now."
+            fallbackMessage="We couldn't create this profile right now."
           />
         ) : null}
 
         <div className="flex flex-wrap gap-3">
           <Button disabled={mutation.isPending} type="submit">
-            {mutation.isPending ? "Creating..." : "Create user"}
+            {mutation.isPending ? "Creating..." : "Create profile"}
           </Button>
           <Button
             disabled={mutation.isPending}
@@ -83,10 +90,16 @@ export function CreateUserForm() {
             variant="ghost"
             onClick={() => form.reset()}
           >
-            Reset
+            Clear
           </Button>
         </div>
       </form>
-    </Card>
+    </>
   );
+
+  if (!framed) {
+    return content;
+  }
+
+  return <Card className="grid gap-5">{content}</Card>;
 }

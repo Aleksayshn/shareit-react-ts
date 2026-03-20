@@ -4,9 +4,9 @@ import { UsersContent } from "./users-content";
 export function UsersPage() {
   return (
     <PageShell
-      description="Users are loaded from the real backend and can be created, viewed, updated, deleted, and selected as the active sharer."
-      eyebrow="Users"
-      title="Manage real API users"
+      description="Create and manage profiles used to share items and request to borrow them."
+      eyebrow="Profiles"
+      title="Profiles"
     >
       <UsersContent />
     </PageShell>

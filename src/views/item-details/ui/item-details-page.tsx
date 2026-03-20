@@ -11,16 +11,16 @@ export function ItemDetailsPage({ itemId }: ItemDetailsPageProps) {
       actions={
         <div className="flex flex-wrap gap-3">
           <LinkButton href="/" size="sm" variant="ghost">
-            Discovery
+            Explore
           </LinkButton>
           <LinkButton href="/items" size="sm" variant="secondary">
-            My items
+            My listings
           </LinkButton>
         </div>
       }
-      description="This screen combines read-only details with booking and commenting interactions while keeping DTO knowledge inside entity slices."
-      eyebrow="Item details"
-      title="Inspect an item before you act on it"
+      description="See availability, borrower notes, and request information for this listing."
+      eyebrow="Listing"
+      title="Item details"
     >
       <ItemDetailsContent itemId={itemId} />
     </PageShell>

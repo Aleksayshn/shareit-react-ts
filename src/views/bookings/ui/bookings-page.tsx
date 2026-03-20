@@ -10,11 +10,11 @@ interface BookingsPageProps {
 
 export function BookingsPage({ mode }: BookingsPageProps) {
   const title =
-    mode === "mine" ? "Track your bookings" : "Review booking requests";
+    mode === "mine" ? "Borrowing" : "Lending";
   const description =
     mode === "mine"
-      ? "This page shows bookings created by the active user via `GET /bookings`."
-      : "This page shows booking requests for the active user's items via `GET /bookings/owner`.";
+      ? "Track the items you requested and their current status."
+      : "Review and manage borrowing requests for your shared items.";
 
   return (
     <PageShell
@@ -25,22 +25,32 @@ export function BookingsPage({ mode }: BookingsPageProps) {
             size="sm"
             variant={mode === "mine" ? "primary" : "ghost"}
           >
-            My bookings
+            Borrowing
           </LinkButton>
           <LinkButton
             href="/bookings/owner"
             size="sm"
             variant={mode === "owner" ? "primary" : "ghost"}
           >
-            Owner requests
+            Lending
           </LinkButton>
         </div>
       }
       description={description}
-      eyebrow="Bookings"
+      eyebrow={mode === "mine" ? "Borrowing" : "Lending"}
       title={title}
     >
-      <Suspense fallback={<LoadingState message="Loading bookings..." />}>
+      <Suspense
+        fallback={
+          <LoadingState
+            message={
+              mode === "mine"
+                ? "Loading your borrowing activity..."
+                : "Loading lending requests..."
+            }
+          />
+        }
+      >
         <BookingsContent mode={mode} />
       </Suspense>
     </PageShell>

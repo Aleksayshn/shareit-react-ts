@@ -38,13 +38,13 @@ export function AddCommentForm({
     <Card className="grid gap-4">
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent">
-          Add comment
+          Leave a note
         </p>
         <h3 className="mt-3 text-2xl font-semibold text-foreground">
-          Share your experience
+          Share how it went
         </h3>
         <p className="mt-2 text-sm leading-7 text-muted">
-          The backend decides whether the selected user is allowed to comment.
+          If you&apos;ve borrowed this item before, you can leave a note for future borrowers.
         </p>
       </div>
 
@@ -53,18 +53,18 @@ export function AddCommentForm({
         onSubmit={form.handleSubmit((values) => mutation.mutate(values))}
       >
         <Field
-          description="Comments usually become valid after a completed booking."
+          description="Notes are available after an eligible completed request."
           error={form.formState.errors.text?.message}
           htmlFor={`comment-${itemId}`}
-          label="Comment"
+          label="Your note"
         >
           <Textarea
             disabled={mutation.isPending || !selectedUserId}
             id={`comment-${itemId}`}
             placeholder={
               selectedUserId
-                ? "What was it like to use this item?"
-                : "Select a user to leave a comment."
+                ? "What should the next borrower know?"
+                : "Choose a profile to leave a note."
             }
             rows={4}
             {...form.register("text")}
@@ -74,7 +74,7 @@ export function AddCommentForm({
         {mutation.isError ? (
           <AppErrorPanel
             error={mutation.error}
-            fallbackMessage="Unable to add the comment right now."
+            fallbackMessage="We couldn't add your note right now."
           />
         ) : null}
 
@@ -83,7 +83,7 @@ export function AddCommentForm({
             disabled={!selectedUserId || mutation.isPending}
             type="submit"
           >
-            {mutation.isPending ? "Sending..." : "Add comment"}
+            {mutation.isPending ? "Posting..." : "Post note"}
           </Button>
           <Button
             disabled={mutation.isPending}

@@ -19,7 +19,7 @@ export function SelectUserButton({ userId }: SelectUserButtonProps) {
       variant={isActive ? "secondary" : "primary"}
       onClick={() => setSelectedUserId(userId)}
     >
-      {isActive ? "Active user" : "Make active"}
+      {isActive ? "Current profile" : "Use this profile"}
     </Button>
   );
 }

@@ -14,9 +14,13 @@ import { AppErrorPanel, Button, Card, Field, Input, Select, Textarea } from "@/s
 
 interface CreateItemFormProps {
   selectedUserId: string | null;
+  framed?: boolean;
 }
 
-export function CreateItemForm({ selectedUserId }: CreateItemFormProps) {
+export function CreateItemForm({
+  selectedUserId,
+  framed = true,
+}: CreateItemFormProps) {
   const queryClient = useQueryClient();
   const form = useForm<ItemFormValues>({
     defaultValues: emptyItemDraft,
@@ -33,17 +37,17 @@ export function CreateItemForm({ selectedUserId }: CreateItemFormProps) {
     },
   });
 
-  return (
-    <Card className="grid gap-5">
+  const content = (
+    <>
       <div>
         <p className="text-sm font-semibold uppercase tracking-[0.22em] text-accent">
-          Create item
+          New listing
         </p>
         <h2 className="mt-3 text-2xl font-semibold text-foreground">
-          Add something new to share
+          Add an item to share
         </h2>
         <p className="mt-2 text-sm leading-7 text-muted">
-          New items are created for the selected backend user.
+          Describe something people can borrow from you.
         </p>
       </div>
 
@@ -75,7 +79,7 @@ export function CreateItemForm({ selectedUserId }: CreateItemFormProps) {
           <Textarea
             disabled={mutation.isPending || !selectedUserId}
             id="create-item-description"
-            placeholder="Describe what makes this item useful to other sharers."
+            placeholder="Share what it is, what condition it's in, and anything borrowers should know."
             rows={4}
             {...form.register("description")}
           />
@@ -92,8 +96,8 @@ export function CreateItemForm({ selectedUserId }: CreateItemFormProps) {
                 value={field.value ? "true" : "false"}
                 onChange={(event) => field.onChange(event.target.value === "true")}
               >
-                <option value="true">Available for booking</option>
-                <option value="false">Unavailable</option>
+                <option value="true">Available to borrow</option>
+                <option value="false">Not available right now</option>
               </Select>
             )}
           />
@@ -102,13 +106,13 @@ export function CreateItemForm({ selectedUserId }: CreateItemFormProps) {
         {mutation.isError ? (
           <AppErrorPanel
             error={mutation.error}
-            fallbackMessage="Unable to create the item right now."
+            fallbackMessage="We couldn't create this listing right now."
           />
         ) : null}
 
         <div className="flex flex-wrap items-center gap-3">
           <Button disabled={mutation.isPending || !selectedUserId} type="submit">
-            {mutation.isPending ? "Creating..." : "Create item"}
+            {mutation.isPending ? "Adding..." : "Add listing"}
           </Button>
           <Button
             disabled={mutation.isPending}
@@ -116,10 +120,16 @@ export function CreateItemForm({ selectedUserId }: CreateItemFormProps) {
             variant="ghost"
             onClick={() => form.reset(emptyItemDraft)}
           >
-            Reset
+            Clear
           </Button>
         </div>
       </form>
-    </Card>
+    </>
   );
+
+  if (!framed) {
+    return content;
+  }
+
+  return <Card className="grid gap-5">{content}</Card>;
 }

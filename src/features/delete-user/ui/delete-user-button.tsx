@@ -40,7 +40,7 @@ export function DeleteUserButton({
   const errorMessage =
     mutation.error instanceof AppError
       ? mutation.error.message
-      : "Unable to delete the user right now.";
+      : "We couldn't delete this profile right now.";
 
   return (
     <div className="grid gap-2">
@@ -50,12 +50,12 @@ export function DeleteUserButton({
         type="button"
         variant="danger"
         onClick={() => {
-          if (window.confirm("Delete this user from the real backend?")) {
+          if (window.confirm("Delete this profile?")) {
             mutation.mutate();
           }
         }}
       >
-        {mutation.isPending ? "Deleting..." : "Delete user"}
+        {mutation.isPending ? "Deleting..." : "Delete profile"}
       </Button>
       {mutation.isError ? (
         <p className="text-sm text-danger">{errorMessage}</p>

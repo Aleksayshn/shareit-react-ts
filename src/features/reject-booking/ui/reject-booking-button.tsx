@@ -46,7 +46,7 @@ export function RejectBookingButton({
         variant="danger"
         onClick={() => mutation.mutate()}
       >
-        {mutation.isPending ? "Rejecting..." : "Reject"}
+        {mutation.isPending ? "Declining..." : "Decline request"}
       </Button>
       {errorMessage ? <p className="text-sm text-danger">{errorMessage}</p> : null}
     </div>

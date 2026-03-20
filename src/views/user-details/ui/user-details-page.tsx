@@ -10,12 +10,12 @@ export function UserDetailsPage({ userId }: UserDetailsPageProps) {
     <PageShell
       actions={
         <LinkButton href="/users" size="sm" variant="ghost">
-          Back to users
+          Back to profiles
         </LinkButton>
       }
-      description="This page stays connected to the real backend record for one user."
-      eyebrow="User details"
-      title="Inspect and maintain a user"
+      description="Update this profile or make it your current profile while you browse and share."
+      eyebrow="Profiles"
+      title="Profile details"
     >
       <UserDetailsContent userId={userId} />
     </PageShell>

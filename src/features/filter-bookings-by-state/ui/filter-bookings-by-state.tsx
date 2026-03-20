@@ -16,7 +16,7 @@ export function FilterBookingsByState({
   const searchParams = useSearchParams();
 
   return (
-    <Field htmlFor="booking-state" label="State filter">
+    <Field htmlFor="booking-state" label="Status">
       <Select
         id="booking-state"
         value={value}
