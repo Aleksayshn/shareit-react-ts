@@ -1,18 +1,17 @@
 # ShareIt MVP
 
-ShareIt MVP is a Next.js App Router frontend for discovering items, managing shared inventory, creating and reviewing bookings, and adding comments after borrowing.
+ShareIt is a Next.js App Router marketplace for temporary item sharing. People can discover useful listings, borrow what they need for a short time, and publish their own unused items for others.
 
-## What Is Included
+## Features
 
-- users management on `/users` and `/users/[id]` via the real `/users` API
-- item discovery on `/` via `GET /items/search`
-- owner inventory on `/items`
-- item details, booking request CTA, and comment flow on `/items/[id]`
-- borrower bookings on `/bookings`
-- owner booking requests on `/bookings/owner`
-- persisted active-user selection with automatic `X-Sharer-User-Id` injection
-- React Hook Form + Zod for create/update forms
-- TanStack Query for server state and Zustand for the tiny active-user client state
+- secure authentication with register, login, logout, and server-managed session cookies
+- public home page with marketplace-style hero, featured listings, and clear borrow/share calls to action
+- item discovery with search, availability states, and public item detail pages
+- personal listings dashboard for creating and updating shared items
+- borrowing dashboard for tracking requests you sent
+- lending dashboard for reviewing and managing requests on your own listings
+- comments flow for eligible borrowers
+- responsive UI built with Next.js App Router, TypeScript, TanStack Query, React Hook Form, and Zod
 
 ## Architecture Summary
 

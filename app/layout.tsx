@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AppProviders } from "@/src/app/providers";
 import { AppHeader } from "@/src/widgets";
+import { getSessionUser } from "@/src/shared/auth/server";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -12,15 +13,17 @@ export const metadata: Metadata = {
     "Share useful things with others and borrow what you need.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const user = await getSessionUser();
+
   return (
     <html lang="en">
       <body>
-        <AppProviders>
+        <AppProviders initialUser={user}>
           <AppHeader />
           {children}
         </AppProviders>

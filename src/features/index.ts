@@ -1,5 +1,6 @@
 export * from "./add-comment";
 export * from "./approve-booking";
+export * from "./auth";
 export * from "./create-booking";
 export * from "./create-item";
 export * from "./create-user";

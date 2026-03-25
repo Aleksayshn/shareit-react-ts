@@ -1,15 +1,8 @@
-import { UserDetailsPage } from "@/src/views";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/src/shared/auth/server";
 
-interface UserDetailsRouteProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
+export default async function UserDetailsRoute() {
+  const user = await getSessionUser();
 
-export default async function UserDetailsRoute({
-  params,
-}: UserDetailsRouteProps) {
-  const { id } = await params;
-
-  return <UserDetailsPage userId={id} />;
+  redirect(user ? "/items" : "/register");
 }

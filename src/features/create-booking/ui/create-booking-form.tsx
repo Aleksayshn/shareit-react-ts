@@ -11,6 +11,7 @@ import {
   type BookingFormValues,
 } from "@/src/entities/booking";
 import { itemQueryKeys, type Item } from "@/src/entities/item";
+import { useAuth } from "@/src/shared/auth";
 import {
   AppErrorPanel,
   Button,
@@ -22,17 +23,16 @@ import {
 
 interface CreateBookingFormProps {
   item: Item;
-  selectedUserId: string | null;
   id?: string;
   tone?: "default" | "accent";
 }
 
 export function CreateBookingForm({
   item,
-  selectedUserId,
   id,
   tone = "default",
 }: CreateBookingFormProps) {
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const form = useForm<BookingFormValues>({
@@ -79,9 +79,9 @@ export function CreateBookingForm({
           Send a borrow request
         </h3>
         <p className="mt-2 text-sm leading-7 text-muted">
-          {selectedUserId
+          {isAuthenticated
             ? "Choose the dates you'd like to borrow it."
-            : "Choose a profile first to send a request."}
+            : "Sign in to request this item from the owner."}
         </p>
       </div>
 
@@ -107,7 +107,7 @@ export function CreateBookingForm({
           label="From"
         >
           <Input
-            disabled={mutation.isPending || !selectedUserId}
+            disabled={mutation.isPending || !isAuthenticated}
             id={`booking-start-${item.id}`}
             type="datetime-local"
             {...form.register("startAt")}
@@ -120,7 +120,7 @@ export function CreateBookingForm({
           label="Until"
         >
           <Input
-            disabled={mutation.isPending || !selectedUserId}
+            disabled={mutation.isPending || !isAuthenticated}
             id={`booking-end-${item.id}`}
             type="datetime-local"
             {...form.register("endAt")}
@@ -134,9 +134,17 @@ export function CreateBookingForm({
           />
         ) : null}
 
-        <Button disabled={!selectedUserId || mutation.isPending} type="submit">
-          {mutation.isPending ? "Sending..." : "Send request"}
-        </Button>
+        {isAuthenticated ? (
+          <Button disabled={mutation.isPending} type="submit">
+            {mutation.isPending ? "Sending..." : "Send request"}
+          </Button>
+        ) : (
+          <LinkButton
+            href={`/login?next=${encodeURIComponent(`/items/${item.id}#borrow`)}`}
+          >
+            Sign in to request
+          </LinkButton>
+        )}
       </form>
     </Card>
   );

@@ -3,7 +3,6 @@ import {
   createAppErrorFromResponseData,
   normalizeAppError,
 } from "@/src/shared/lib";
-import { getSelectedUserId } from "@/src/shared/model";
 
 type QueryPrimitive = string | number | boolean | Date | null | undefined;
 
@@ -21,9 +20,13 @@ export interface ApiRequestOptions<TBody = never> {
 type HttpMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
 function resolveUrl(path: string, query?: QueryParams) {
+  const baseUrl =
+    typeof window === "undefined"
+      ? env.apiBaseUrl
+      : `${window.location.origin}/api/forward`;
   const url = path.startsWith("http")
     ? new URL(path)
-    : new URL(path.replace(/^\//, ""), `${env.apiBaseUrl}/`);
+    : new URL(path.replace(/^\//, ""), `${baseUrl.replace(/\/$/, "")}/`);
 
   if (!query) {
     return url.toString();
@@ -61,7 +64,6 @@ function appendQueryParam(
 
 function createHeaders(body: unknown, headers?: HeadersInit) {
   const requestHeaders = new Headers(headers);
-  const selectedUserId = getSelectedUserId();
 
   requestHeaders.set("Accept", "application/json");
 
@@ -73,10 +75,6 @@ function createHeaders(body: unknown, headers?: HeadersInit) {
     !requestHeaders.has("Content-Type")
   ) {
     requestHeaders.set("Content-Type", "application/json");
-  }
-
-  if (selectedUserId) {
-    requestHeaders.set("X-Sharer-User-Id", selectedUserId);
   }
 
   return requestHeaders;

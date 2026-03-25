@@ -3,9 +3,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { AddCommentForm, CreateBookingForm } from "@/src/features";
 import { getItemDetails, itemQueryKeys, type Item } from "@/src/entities/item";
+import { useAuth } from "@/src/shared/auth";
 import { cn } from "@/src/shared/lib";
 import { AppError } from "@/src/shared/lib/errors";
-import { useActiveUserStore } from "@/src/shared/model";
 import {
   Card,
   ErrorState,
@@ -70,7 +70,7 @@ function BookingPreviewCard({
       <dl className="mt-3 grid gap-2 text-sm text-muted">
         <div className="flex justify-between gap-4">
           <dt>Requested by</dt>
-          <dd className="font-medium text-foreground">Profile #{booking.bookerId}</dd>
+          <dd className="font-medium text-foreground">Member #{booking.bookerId}</dd>
         </div>
         <div className="flex justify-between gap-4">
           <dt>From</dt>
@@ -98,13 +98,13 @@ function BookingPreviewCard({
 function BorrowActionPanel({
   item,
   isOwner,
-  selectedUserId,
+  isAuthenticated,
 }: {
   item: Item;
   isOwner: boolean;
-  selectedUserId: string | null;
+  isAuthenticated: boolean;
 }) {
-  if (!selectedUserId) {
+  if (!isAuthenticated) {
     return (
       <Card className="grid gap-4" id="borrow" tone="accent">
         <div>
@@ -112,16 +112,19 @@ function BorrowActionPanel({
             Borrow this item
           </p>
           <h3 className="mt-3 text-2xl font-semibold text-foreground">
-            Choose a profile to continue
+            Sign in to request it
           </h3>
           <p className="mt-2 text-sm leading-7 text-muted">
-            Borrow requests are sent from your current profile, so choose one
-            before picking dates.
+            Create an account or sign in to send a borrow request and manage your
+            upcoming dates.
           </p>
         </div>
         <div>
-          <LinkButton href="/users" size="sm">
-            Choose profile
+          <LinkButton
+            href={`/login?next=${encodeURIComponent(`/items/${item.id}#borrow`)}`}
+            size="sm"
+          >
+            Sign in to request
           </LinkButton>
         </div>
       </Card>
@@ -139,8 +142,7 @@ function BorrowActionPanel({
             You cannot borrow your own item
           </h3>
           <p className="mt-2 text-sm leading-7 text-muted">
-            This listing belongs to your current profile, so the borrow form is
-            hidden here.
+            This listing belongs to you, so the borrow form is hidden here.
           </p>
         </div>
         <div>
@@ -180,14 +182,13 @@ function BorrowActionPanel({
     <CreateBookingForm
       id="borrow"
       item={item}
-      selectedUserId={selectedUserId}
       tone="accent"
     />
   );
 }
 
 export function ItemDetailsContent({ itemId }: ItemDetailsContentProps) {
-  const selectedUserId = useActiveUserStore((state) => state.selectedUserId);
+  const { user, isAuthenticated } = useAuth();
   const itemQuery = useQuery({
     queryKey: itemQueryKeys.detail(itemId),
     queryFn: () => getItemDetails(itemId),
@@ -199,7 +200,7 @@ export function ItemDetailsContent({ itemId }: ItemDetailsContentProps) {
       : "We couldn't load this listing right now.";
 
   const item = itemQuery.data;
-  const isOwner = selectedUserId !== null && item?.ownerId === selectedUserId;
+  const isOwner = Boolean(user && item?.ownerId === user.id);
   const hasOwnerBookingPreview = Boolean(item?.lastBooking || item?.nextBooking);
   const hasSecondaryColumn = Boolean(isOwner && hasOwnerBookingPreview);
 
@@ -244,12 +245,12 @@ export function ItemDetailsContent({ itemId }: ItemDetailsContentProps) {
               {item.ownerId ? (
                 <p className="text-sm leading-7 text-muted">
                   {isOwner ? (
-                    "This listing belongs to your current profile."
+                    "This listing belongs to you."
                   ) : (
                     <>
                       Shared by{" "}
                       <span className="font-medium text-foreground">
-                        profile #{item.ownerId}
+                        member #{item.ownerId}
                       </span>
                       .
                     </>
@@ -261,7 +262,7 @@ export function ItemDetailsContent({ itemId }: ItemDetailsContentProps) {
             <BorrowActionPanel
               isOwner={isOwner}
               item={item}
-              selectedUserId={selectedUserId}
+              isAuthenticated={isAuthenticated}
             />
 
             <Card className="grid gap-4">
@@ -298,7 +299,7 @@ export function ItemDetailsContent({ itemId }: ItemDetailsContentProps) {
               )}
             </Card>
 
-            <AddCommentForm itemId={item.id} selectedUserId={selectedUserId} />
+            <AddCommentForm itemId={item.id} />
           </div>
 
           {hasSecondaryColumn ? (

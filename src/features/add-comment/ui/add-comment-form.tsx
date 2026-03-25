@@ -5,17 +5,15 @@ import { useForm } from "react-hook-form";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addComment, commentFormSchema, type CommentFormValues } from "@/src/entities/comment";
 import { itemQueryKeys } from "@/src/entities/item";
-import { AppErrorPanel, Button, Card, Field, Textarea } from "@/src/shared/ui";
+import { useAuth } from "@/src/shared/auth";
+import { AppErrorPanel, Button, Card, Field, LinkButton, Textarea } from "@/src/shared/ui";
 
 interface AddCommentFormProps {
   itemId: string;
-  selectedUserId: string | null;
 }
 
-export function AddCommentForm({
-  itemId,
-  selectedUserId,
-}: AddCommentFormProps) {
+export function AddCommentForm({ itemId }: AddCommentFormProps) {
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const form = useForm<CommentFormValues>({
     defaultValues: {
@@ -59,12 +57,12 @@ export function AddCommentForm({
           label="Your note"
         >
           <Textarea
-            disabled={mutation.isPending || !selectedUserId}
+            disabled={mutation.isPending || !isAuthenticated}
             id={`comment-${itemId}`}
             placeholder={
-              selectedUserId
+              isAuthenticated
                 ? "What should the next borrower know?"
-                : "Choose a profile to leave a note."
+                : "Sign in to leave a note."
             }
             rows={4}
             {...form.register("text")}
@@ -79,12 +77,19 @@ export function AddCommentForm({
         ) : null}
 
         <div className="flex flex-wrap gap-3">
-          <Button
-            disabled={!selectedUserId || mutation.isPending}
-            type="submit"
-          >
-            {mutation.isPending ? "Posting..." : "Post note"}
-          </Button>
+          {isAuthenticated ? (
+            <Button disabled={mutation.isPending} type="submit">
+              {mutation.isPending ? "Posting..." : "Post note"}
+            </Button>
+          ) : (
+            <LinkButton
+              href={`/login?next=${encodeURIComponent(`/items/${itemId}`)}`}
+              size="sm"
+              variant="secondary"
+            >
+              Sign in to post
+            </LinkButton>
+          )}
           <Button
             disabled={mutation.isPending}
             type="button"

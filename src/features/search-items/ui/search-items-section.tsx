@@ -3,8 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { itemQueryKeys, searchItems, type Item } from "@/src/entities/item";
+import { useAuth } from "@/src/shared/auth";
 import { AppError, useDebouncedValue } from "@/src/shared/lib";
-import { useActiveUserStore } from "@/src/shared/model";
 import {
   Button,
   Card,
@@ -25,20 +25,16 @@ const popularSearches = ["Bike", "Drill", "Projector", "Tent", "Camera", "Speake
 
 interface ExploreItemActionsProps {
   item: Item;
-  selectedUserId: string | null;
-  hasHydrated: boolean;
+  userId: string | null;
+  isAuthenticated: boolean;
 }
 
 function ExploreItemActions({
   item,
-  selectedUserId,
-  hasHydrated,
+  userId,
+  isAuthenticated,
 }: ExploreItemActionsProps) {
-  const isOwner = Boolean(selectedUserId && item.ownerId === selectedUserId);
-
-  if (!hasHydrated) {
-    return null;
-  }
+  const isOwner = Boolean(userId && item.ownerId === userId);
 
   if (isOwner) {
     return (
@@ -56,10 +52,13 @@ function ExploreItemActions({
     );
   }
 
-  if (!selectedUserId) {
+  if (!isAuthenticated) {
     return (
-      <LinkButton href="/users" size="sm">
-        Choose profile
+      <LinkButton
+        href={`/login?next=${encodeURIComponent(`/items/${item.id}#borrow`)}`}
+        size="sm"
+      >
+        Sign in to request
       </LinkButton>
     );
   }
@@ -73,8 +72,8 @@ function ExploreItemActions({
 
 export function SearchItemsSection() {
   const [searchTerm, setSearchTerm] = useState("");
-  const selectedUserId = useActiveUserStore((state) => state.selectedUserId);
-  const hasHydrated = useActiveUserStore((state) => state.hasHydrated);
+  const { user, isAuthenticated } = useAuth();
+  const userId = user?.id ?? null;
   const debouncedSearchTerm = useDebouncedValue(searchTerm, SEARCH_DEBOUNCE_MS);
   const normalizedSearchTerm = debouncedSearchTerm.trim();
   const isWaitingForDebounce =
@@ -219,9 +218,9 @@ export function SearchItemsSection() {
           items={searchQuery.data}
           renderActions={(item) => (
             <ExploreItemActions
-              hasHydrated={hasHydrated}
               item={item}
-              selectedUserId={selectedUserId}
+              isAuthenticated={isAuthenticated}
+              userId={userId}
             />
           )}
         />

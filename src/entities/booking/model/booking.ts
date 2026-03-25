@@ -46,10 +46,3 @@ export interface BookingDraft {
   startAt: string;
   endAt: string;
 }
-
-export interface BookingListParams {
-  state: BookingFilterState;
-  from: number;
-  size: number;
-  selectedUserId: string | null;
-}

@@ -1,17 +1,16 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getUsers, userQueryKeys } from "@/src/entities/user";
 import { getMyItems, itemQueryKeys } from "@/src/entities/item";
 import { CreateItemForm, UpdateItemForm } from "@/src/features";
+import { useAuth } from "@/src/shared/auth";
 import { AppError } from "@/src/shared/lib/errors";
-import { useActiveUserStore } from "@/src/shared/model";
 import {
   Card,
-  EmptyState,
   ExpandableCard,
   ErrorState,
   LoadingState,
+  LinkButton,
   SectionHeader,
   StatCard,
 } from "@/src/shared/ui";
@@ -27,18 +26,12 @@ function getInitials(name: string) {
 }
 
 export function MyItemsContent() {
-  const selectedUserId = useActiveUserStore((state) => state.selectedUserId);
-  const hasHydrated = useActiveUserStore((state) => state.hasHydrated);
-  const profilesQuery = useQuery({
-    queryKey: userQueryKeys.list(),
-    queryFn: getUsers,
-    enabled: Boolean(selectedUserId),
-  });
+  const { user, isAuthenticated } = useAuth();
 
   const itemsQuery = useQuery({
-    queryKey: itemQueryKeys.mine(selectedUserId),
+    queryKey: itemQueryKeys.mine(user?.id ?? null),
     queryFn: getMyItems,
-    enabled: Boolean(selectedUserId),
+    enabled: Boolean(user),
   });
 
   const errorMessage =
@@ -46,53 +39,59 @@ export function MyItemsContent() {
       ? itemsQuery.error.message
       : "We couldn't load your listings right now.";
   const items = itemsQuery.data ?? [];
-  const currentProfile =
-    profilesQuery.data?.find((profile) => profile.id === selectedUserId) ?? null;
   const availableCount = items.filter((item) => item.isAvailable).length;
   const noteCount = items.reduce((total, item) => total + item.comments.length, 0);
 
   return (
     <>
-      {!hasHydrated ? (
-        <LoadingState message="Loading your profile..." />
+      {!isAuthenticated ? (
+        <Card className="grid gap-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
+            Sign in required
+          </p>
+          <h2 className="text-2xl font-semibold text-foreground">
+            Sign in to manage listings
+          </h2>
+          <p className="text-sm leading-7 text-muted">
+            Create an account or sign in to publish listings and keep your sharing
+            activity up to date.
+          </p>
+          <div>
+            <LinkButton href="/login?next=/items" size="sm">
+              Sign in to continue
+            </LinkButton>
+          </div>
+        </Card>
       ) : null}
 
-      {hasHydrated && !selectedUserId ? (
-        <EmptyState
-          description="Choose a current profile in the header to manage that person's listings."
-          title="Choose a profile"
-        />
-      ) : null}
-
-      {selectedUserId ? (
+      {isAuthenticated && user ? (
         <div className="grid gap-6">
           <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr]">
             <Card className="grid gap-5" tone="accent">
               <div className="flex items-start gap-4">
                 <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-3xl bg-accent/12 text-lg font-semibold uppercase tracking-[0.16em] text-accent">
-                  {currentProfile ? getInitials(currentProfile.name) : "?"}
+                  {getInitials(user.name)}
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
-                    Sharing as
+                    Signed in as
                   </p>
                   <h2 className="mt-2 text-2xl font-semibold tracking-tight text-foreground">
-                    {currentProfile ? currentProfile.name : "Current profile"}
+                    {user.name}
                   </h2>
                   <p className="mt-2 text-sm leading-7 text-muted">
-                    {currentProfile?.email ??
-                      "Manage the listings for the profile selected in the header."}
+                    {user.email}
                   </p>
                 </div>
               </div>
               <p className="text-sm leading-7 text-muted">
-                Keep this space up to date so other people can see what this
-                profile is sharing right now.
+                Keep this space up to date so other people can see what you are
+                sharing right now.
               </p>
             </Card>
 
             <StatCard
-              description="Everything this profile is currently sharing."
+              description="Everything you're currently sharing."
               label="Listings"
               value={itemsQuery.isSuccess ? items.length : "--"}
             />
@@ -117,7 +116,7 @@ export function MyItemsContent() {
             title="Add a new listing"
             tone="accent"
           >
-            <CreateItemForm framed={false} selectedUserId={selectedUserId} />
+            <CreateItemForm framed={false} />
           </ExpandableCard>
 
           <div className="grid gap-4">

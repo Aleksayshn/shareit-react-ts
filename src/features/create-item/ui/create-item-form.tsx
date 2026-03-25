@@ -10,17 +10,15 @@ import {
   itemQueryKeys,
   type ItemFormValues,
 } from "@/src/entities/item";
-import { AppErrorPanel, Button, Card, Field, Input, Select, Textarea } from "@/src/shared/ui";
+import { useAuth } from "@/src/shared/auth";
+import { AppErrorPanel, Button, Card, Field, Input, LinkButton, Select, Textarea } from "@/src/shared/ui";
 
 interface CreateItemFormProps {
-  selectedUserId: string | null;
   framed?: boolean;
 }
 
-export function CreateItemForm({
-  selectedUserId,
-  framed = true,
-}: CreateItemFormProps) {
+export function CreateItemForm({ framed = true }: CreateItemFormProps) {
+  const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const form = useForm<ItemFormValues>({
     defaultValues: emptyItemDraft,
@@ -62,7 +60,7 @@ export function CreateItemForm({
           required
         >
           <Input
-            disabled={mutation.isPending || !selectedUserId}
+            disabled={mutation.isPending || !isAuthenticated}
             id="create-item-name"
             maxLength={120}
             placeholder="Mountain bike"
@@ -77,7 +75,7 @@ export function CreateItemForm({
           required
         >
           <Textarea
-            disabled={mutation.isPending || !selectedUserId}
+            disabled={mutation.isPending || !isAuthenticated}
             id="create-item-description"
             placeholder="Share what it is, what condition it's in, and anything borrowers should know."
             rows={4}
@@ -91,7 +89,7 @@ export function CreateItemForm({
             name="available"
             render={({ field }) => (
               <Select
-                disabled={mutation.isPending || !selectedUserId}
+                disabled={mutation.isPending || !isAuthenticated}
                 id="create-item-available"
                 value={field.value ? "true" : "false"}
                 onChange={(event) => field.onChange(event.target.value === "true")}
@@ -111,9 +109,15 @@ export function CreateItemForm({
         ) : null}
 
         <div className="flex flex-wrap items-center gap-3">
-          <Button disabled={mutation.isPending || !selectedUserId} type="submit">
-            {mutation.isPending ? "Adding..." : "Add listing"}
-          </Button>
+          {isAuthenticated ? (
+            <Button disabled={mutation.isPending} type="submit">
+              {mutation.isPending ? "Adding..." : "Add listing"}
+            </Button>
+          ) : (
+            <LinkButton href="/login?next=/items" size="sm" variant="secondary">
+              Sign in to add
+            </LinkButton>
+          )}
           <Button
             disabled={mutation.isPending}
             type="button"

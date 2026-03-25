@@ -1,5 +1,8 @@
-import { UsersPage } from "@/src/views";
+import { redirect } from "next/navigation";
+import { getSessionUser } from "@/src/shared/auth/server";
 
-export default function UsersRoute() {
-  return <UsersPage />;
+export default async function UsersRoute() {
+  const user = await getSessionUser();
+
+  redirect(user ? "/items" : "/register");
 }

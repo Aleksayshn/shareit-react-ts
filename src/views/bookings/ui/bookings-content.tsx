@@ -16,11 +16,10 @@ import {
   FilterBookingsByState,
   RejectBookingButton,
 } from "@/src/features";
+import { useAuth } from "@/src/shared/auth";
 import { AppError } from "@/src/shared/lib/errors";
-import { useActiveUserStore } from "@/src/shared/model";
 import {
   Card,
-  EmptyState,
   ExpandableCard,
   ErrorState,
   Field,
@@ -28,6 +27,7 @@ import {
   SectionHeader,
   Select,
   StatCard,
+  LinkButton,
 } from "@/src/shared/ui";
 import { BookingList } from "@/src/widgets";
 
@@ -115,20 +115,19 @@ function OwnerBookingActions({ booking }: { booking: Booking }) {
 
 export function BookingsContent({ mode }: BookingsContentProps) {
   const router = useRouter();
-  const selectedUserId = useActiveUserStore((state) => state.selectedUserId);
-  const hasHydrated = useActiveUserStore((state) => state.hasHydrated);
+  const { user, isAuthenticated } = useAuth();
   const { state, from, size, buildHref } = useBookingListUrlState();
 
   const bookingsQuery = useQuery({
     queryKey:
       mode === "mine"
-        ? bookingQueryKeys.mine(selectedUserId, state, from, size)
-        : bookingQueryKeys.owner(selectedUserId, state, from, size),
+        ? bookingQueryKeys.mine(user?.id ?? null, state, from, size)
+        : bookingQueryKeys.owner(user?.id ?? null, state, from, size),
     queryFn: () =>
       mode === "mine"
         ? getMyBookings({ state, from, size })
         : getOwnerBookings({ state, from, size }),
-    enabled: Boolean(selectedUserId),
+    enabled: Boolean(user),
   });
 
   const errorMessage =
@@ -168,22 +167,33 @@ export function BookingsContent({ mode }: BookingsContentProps) {
 
   return (
     <>
-      {!hasHydrated ? (
-        <LoadingState message="Loading your profile..." />
+      {!isAuthenticated ? (
+        <Card className="grid gap-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
+            Sign in required
+          </p>
+          <h2 className="text-2xl font-semibold text-foreground">
+            Sign in to view requests
+          </h2>
+          <p className="text-sm leading-7 text-muted">
+            {mode === "mine"
+              ? "Sign in to review the requests you've sent and track upcoming borrow dates."
+              : "Sign in to manage the requests people have sent for your listings."}
+          </p>
+          <div>
+            <LinkButton
+              href={`/login?next=${encodeURIComponent(
+                mode === "mine" ? "/bookings" : "/bookings/owner",
+              )}`}
+              size="sm"
+            >
+              Sign in to continue
+            </LinkButton>
+          </div>
+        </Card>
       ) : null}
 
-      {hasHydrated && !selectedUserId ? (
-        <EmptyState
-          description={
-            mode === "mine"
-              ? "Choose a current profile in the header to view the requests this person has made."
-              : "Choose a current profile in the header to review requests for that person's listings."
-          }
-          title="Choose a profile"
-        />
-      ) : null}
-
-      {selectedUserId ? (
+      {isAuthenticated && user ? (
         <div className="grid gap-6">
           <div className="grid gap-4 lg:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr]">
             <Card
@@ -305,7 +315,7 @@ export function BookingsContent({ mode }: BookingsContentProps) {
             <SectionHeader
               description={
                 mode === "mine"
-                  ? "These are the requests sent by your current profile."
+                  ? "These are the requests you've sent."
                   : "These are the requests other people have made for your listings."
               }
               eyebrow={mode === "mine" ? "Borrowing" : "Lending"}

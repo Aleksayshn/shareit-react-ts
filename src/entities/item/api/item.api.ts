@@ -11,8 +11,22 @@ import type {
   UpdateItemRequestDto,
 } from "../model/item.types";
 
+const FEATURED_SEARCH_TERM = "a";
+
 export async function getMyItems() {
   const items = await apiClient.get<ItemDto[]>("/items");
+
+  return items.map(mapItemDtoToItem);
+}
+
+export async function getFeaturedItems({ from = 0, size = 6 } = {}) {
+  const items = await apiClient.get<ItemDto[]>("/items/search", {
+    query: {
+      text: FEATURED_SEARCH_TERM,
+      from,
+      size,
+    },
+  });
 
   return items.map(mapItemDtoToItem);
 }
