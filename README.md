@@ -116,33 +116,33 @@ npm run dev
 
 ```mermaid
 flowchart LR
-    Visitor["<<actor>> Visitor"]
-    Member["<<actor>> Member"]
-    Lender["<<actor>> Lender"]
-    Borrower["<<actor>> Borrower"]
+    Visitor[Visitor\nUnauthenticated User]
+    Member[Member\nAuthenticated User]
+    Lender[Lender]
+    Borrower[Borrower]
 
-    Lender -->|generalization| Member
-    Borrower -->|generalization| Member
+    Visitor --> Member
+    Member --> Lender
+    Member --> Borrower
 
-    subgraph System["ShareIt Marketplace System"]
-        direction TB
+    subgraph ShareItSystem[ShareIt Marketplace System]
+        UC1((Browse Home Page))
+        UC2((Search Items))
+        UC3((View Item Details))
 
-        UC1([Browse Home Page])
-        UC2([Search Items])
-        UC3([View Item Details])
-        UC4([Register])
-        UC5([Login])
+        UC4((Register))
+        UC5((Login))
+        UC6((Logout))
 
-        UC6([Create Listing])
-        UC7([Update Listing])
-        UC8([Manage Lending Requests])
+        UC7((Create Listing))
+        UC8((Update Listing))
+        UC9((Manage Lending Requests))
 
-        UC9([Request to Borrow])
-        UC10([Track Borrowing Requests])
-        UC11([Post Comment])
+        UC10((Request to Borrow))
+        UC11((Track Borrowing Requests))
+        UC12((Post Comment))
 
-        UC12([Logout])
-        UC13([Authenticate User])
+        UC13((Authentication Required))
     end
 
     Visitor --- UC1
@@ -151,28 +151,29 @@ flowchart LR
     Visitor --- UC4
     Visitor --- UC5
 
-    Member --- UC12
+    Member --- UC1
+    Member --- UC2
+    Member --- UC3
+    Member --- UC6
 
-    Lender --- UC6
     Lender --- UC7
     Lender --- UC8
+    Lender --- UC9
 
-    Borrower --- UC2
-    Borrower --- UC3
-    Borrower --- UC9
     Borrower --- UC10
     Borrower --- UC11
+    Borrower --- UC12
 
-    UC6 -. "<<include>>" .-> UC13
+    UC10 -. "<<include>>" .-> UC13
     UC7 -. "<<include>>" .-> UC13
     UC8 -. "<<include>>" .-> UC13
     UC9 -. "<<include>>" .-> UC13
-    UC10 -. "<<include>>" .-> UC13
-    UC12 -. "<<include>>" .-> UC13
-    UC11 -. "<<extend>>" .-> UC3
+    UC11 -. "<<include>>" .-> UC13
+    UC12 -. "<<extend>>" .-> UC3
 
     Note1["{User must have completed a successful borrow}"]
-    Note1 -.-> UC11
+    Note1 -.-> UC12
+
 ```
 
 ## Sequence Diagrams
@@ -300,134 +301,6 @@ sequenceDiagram
     deactivate BE
     deactivate Proxy
     deactivate FE
-```
-
-## Architecture Diagram
-
-```mermaid
-flowchart TD
-    U[User / Browser]
-
-    subgraph NEXT[Next.js App Router Frontend]
-        RL[app/layout.tsx<br/>RootLayout]
-        AP[src/app/providers<br/>AuthProvider + QueryProvider]
-
-        subgraph ROUTES[app routes]
-            R0[/]
-            R1[/login]
-            R2[/register]
-            R3[/items]
-            R4[/items/:id]
-            R5[/bookings]
-            R6[/bookings/owner]
-        end
-
-        subgraph VIEWS[src/views]
-            V0[DiscoveryPage]
-            V1[Auth Pages]
-            V2[MyItemsPage]
-            V3[ItemDetailsPage]
-            V4[BookingsPage]
-        end
-
-        subgraph FEATURES[src/features]
-            F0[auth]
-            F1[search-items]
-            F2[create/update-item]
-            F3[create-booking]
-            F4[approve/reject-booking]
-            F5[add-comment]
-            F6[select-user]
-        end
-
-        subgraph WIDGETS[src/widgets]
-            W0[AppHeader]
-            W1[ItemList]
-            W2[BookingList]
-            W3[UserList]
-        end
-
-        subgraph ENTITIES[src/entities]
-            E0[auth]
-            E1[item]
-            E2[booking]
-            E3[user]
-            E4[comment]
-        end
-
-        subgraph SHARED[src/shared]
-            S0[ui]
-            S1[api-client]
-            S2[auth/session]
-            S3[active-user-store]
-            S4[react-query]
-        end
-
-        subgraph APIROUTES[Next API routes]
-            A0[/api/auth/login]
-            A1[/api/auth/register]
-            A2[/api/auth/logout]
-            A3[/api/forward/*]
-        end
-    end
-
-    subgraph BACKEND[ShareIt Backend API]
-        B0[/auth/login]
-        B1[/auth/register]
-        B2[/users]
-        B3[/items]
-        B4[/items/search]
-        B5[/bookings]
-        B6[/bookings/owner]
-    end
-
-    U --> RL
-    RL --> AP
-    RL --> W0
-
-    R0 --> V0
-    R1 --> V1
-    R2 --> V1
-    R3 --> V2
-    R4 --> V3
-    R5 --> V4
-    R6 --> V4
-
-    V0 --> F1
-    V1 --> F0
-    V2 --> F2
-    V3 --> F3
-    V3 --> F5
-    V4 --> F4
-    V2 --> W1
-    V4 --> W2
-
-    F0 --> E0
-    F1 --> E1
-    F2 --> E1
-    F3 --> E2
-    F4 --> E2
-    F5 --> E4
-    F6 --> E3
-
-    E0 --> S1
-    E1 --> S1
-    E2 --> S1
-    E3 --> S1
-    E4 --> S1
-
-    S1 --> A0
-    S1 --> A1
-    S1 --> A2
-    S1 --> A3
-
-    A0 --> B0
-    A1 --> B1
-    A3 --> B2
-    A3 --> B3
-    A3 --> B4
-    A3 --> B5
-    A3 --> B6
 ```
 
 ## Scripts
