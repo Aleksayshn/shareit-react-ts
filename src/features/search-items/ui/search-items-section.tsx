@@ -2,13 +2,17 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { itemQueryKeys, searchItems, type Item } from "@/src/entities/item";
+import {
+  getDiscoveryItems,
+  itemQueryKeys,
+  searchItems,
+  type Item,
+} from "@/src/entities/item";
 import { useAuth } from "@/src/shared/auth";
 import { AppError, useDebouncedValue } from "@/src/shared/lib";
 import {
   Button,
   Card,
-  EmptyState,
   ErrorState,
   Field,
   Input,
@@ -76,6 +80,7 @@ export function SearchItemsSection() {
   const userId = user?.id ?? null;
   const debouncedSearchTerm = useDebouncedValue(searchTerm, SEARCH_DEBOUNCE_MS);
   const normalizedSearchTerm = debouncedSearchTerm.trim();
+  const hasSearchTerm = normalizedSearchTerm.length > 0;
   const isWaitingForDebounce =
     searchTerm.trim().length > 0 && searchTerm !== debouncedSearchTerm;
   const searchRequest = {
@@ -83,18 +88,26 @@ export function SearchItemsSection() {
     from: 0,
     size: DISCOVERY_PAGE_SIZE,
   };
+  const discoveryQuery = useQuery({
+    queryKey: itemQueryKeys.discovery(0, DISCOVERY_PAGE_SIZE),
+    queryFn: () => getDiscoveryItems({ from: 0, size: DISCOVERY_PAGE_SIZE }),
+  });
 
   const searchQuery = useQuery({
     queryKey: itemQueryKeys.search(searchRequest),
     queryFn: () => searchItems(searchRequest),
-    enabled: normalizedSearchTerm.length > 0,
+    enabled: hasSearchTerm,
   });
 
+  const activeQuery = hasSearchTerm ? searchQuery : discoveryQuery;
   const errorMessage =
-    searchQuery.error instanceof AppError
-      ? searchQuery.error.message
-      : "We couldn't search listings right now.";
+    activeQuery.error instanceof AppError
+      ? activeQuery.error.message
+      : hasSearchTerm
+        ? "We couldn't search listings right now."
+        : "We couldn't load listings right now.";
   const resultCount = searchQuery.data?.length ?? 0;
+  const discoveryCount = discoveryQuery.data?.length ?? 0;
 
   return (
     <div className="grid gap-5">
@@ -158,44 +171,52 @@ export function SearchItemsSection() {
         </div>
       </Card>
 
-      {searchTerm.trim().length === 0 ? (
-        <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <EmptyState
-            description="Start with a quick search to discover tools, gear, household items, and other useful things people are sharing."
-            title="Search to explore listings"
-          />
-          <div className="grid gap-4 sm:grid-cols-2">
-            <StatCard
-              description="Borrow tools, equipment, and useful things without buying them."
-              label="Borrow for one-off needs"
-              tone="accent"
-              value="Practical"
-            />
-            <StatCard
-              description="Share what you already own and help other people nearby."
-              label="Share what you have"
-              value="Community"
-            />
-          </div>
-        </div>
-      ) : null}
+      <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+        <StatCard
+          description="Borrow tools, equipment, and useful things without buying them."
+          label="Borrow for one-off needs"
+          tone="accent"
+          value={hasSearchTerm ? `${resultCount}` : `${discoveryCount}`}
+        />
+        <StatCard
+          description="Share what you already own and help other people nearby."
+          label="Share what you have"
+          value={hasSearchTerm ? "Search" : "Browse"}
+        />
+      </div>
 
       {isWaitingForDebounce ? (
         <LoadingState message="Searching as you type..." />
       ) : null}
 
-      {searchQuery.isPending ? (
+      {!hasSearchTerm && discoveryQuery.isLoading ? (
+        <LoadingState message="Loading listings..." />
+      ) : null}
+
+      {hasSearchTerm && searchQuery.isLoading ? (
         <LoadingState message="Looking for listings..." />
       ) : null}
 
-      {searchQuery.isError ? (
+      {activeQuery.isError ? (
         <ErrorState
           description={errorMessage}
-          title="Search unavailable"
+          title={hasSearchTerm ? "Search unavailable" : "Listings unavailable"}
         />
       ) : null}
 
-      {searchQuery.isSuccess && normalizedSearchTerm.length > 0 ? (
+      {!hasSearchTerm && discoveryQuery.isSuccess ? (
+        <SectionHeader
+          description={
+            discoveryCount > 0
+              ? "Browse a live snapshot of listings people are sharing right now."
+              : "New listings will appear here as soon as people start sharing."
+          }
+          eyebrow="Browse"
+          title={discoveryCount > 0 ? "Listings available now" : "No listings yet"}
+        />
+      ) : null}
+
+      {hasSearchTerm && searchQuery.isSuccess ? (
         <SectionHeader
           description={
             resultCount > 0
@@ -211,7 +232,22 @@ export function SearchItemsSection() {
         />
       ) : null}
 
-      {searchQuery.isSuccess && normalizedSearchTerm.length > 0 ? (
+      {!hasSearchTerm && discoveryQuery.isSuccess ? (
+        <ItemList
+          emptyDescription="New listings will appear here once people start sharing."
+          emptyTitle="No listings yet"
+          items={discoveryQuery.data}
+          renderActions={(item) => (
+            <ExploreItemActions
+              item={item}
+              isAuthenticated={isAuthenticated}
+              userId={userId}
+            />
+          )}
+        />
+      ) : null}
+
+      {hasSearchTerm && searchQuery.isSuccess ? (
         <ItemList
           emptyDescription="Try a broader term or search for a different kind of item."
           emptyTitle="Nothing matches yet"
