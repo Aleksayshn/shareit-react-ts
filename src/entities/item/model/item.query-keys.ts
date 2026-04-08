@@ -7,6 +7,8 @@ export const itemQueryKeys = {
   lists: () => [...itemRootKey, "list"] as const,
   mine: (userId: string | null) =>
     [...itemRootKey, "list", "mine", userId ?? "guest"] as const,
+  discovery: (from = 0, size = 20) =>
+    [...itemRootKey, "discovery", from, size] as const,
   featured: (from = 0, size = 6) =>
     [...itemRootKey, "featured", from, size] as const,
   search: ({ text, from = 0, size = 20 }: ItemSearchRequest) =>

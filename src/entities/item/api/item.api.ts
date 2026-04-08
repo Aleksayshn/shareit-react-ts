@@ -11,7 +11,21 @@ import type {
   UpdateItemRequestDto,
 } from "../model/item.types";
 
-const FEATURED_SEARCH_TERM = "a";
+// The public listings feed currently comes from the text-search endpoint,
+// so we use a broad fallback term until the backend exposes a dedicated feed.
+const PUBLIC_LISTINGS_SEARCH_TERM = "a";
+
+async function getPublicListings({ from = 0, size = 6 } = {}) {
+  const items = await apiClient.get<ItemDto[]>("/items/search", {
+    query: {
+      text: PUBLIC_LISTINGS_SEARCH_TERM,
+      from,
+      size,
+    },
+  });
+
+  return items.map(mapItemDtoToItem);
+}
 
 export async function getMyItems() {
   const items = await apiClient.get<ItemDto[]>("/items");
@@ -20,15 +34,11 @@ export async function getMyItems() {
 }
 
 export async function getFeaturedItems({ from = 0, size = 6 } = {}) {
-  const items = await apiClient.get<ItemDto[]>("/items/search", {
-    query: {
-      text: FEATURED_SEARCH_TERM,
-      from,
-      size,
-    },
-  });
+  return getPublicListings({ from, size });
+}
 
-  return items.map(mapItemDtoToItem);
+export async function getDiscoveryItems({ from = 0, size = 20 } = {}) {
+  return getPublicListings({ from, size });
 }
 
 export async function searchItems({

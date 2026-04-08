@@ -322,7 +322,7 @@ export function BookingsContent({ mode }: BookingsContentProps) {
               title={mode === "mine" ? "Requests you sent" : "Requests from others"}
             />
 
-            {bookingsQuery.isPending ? (
+            {bookingsQuery.isLoading ? (
               <LoadingState
                 message={
                   mode === "mine"

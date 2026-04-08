@@ -126,7 +126,7 @@ export function MyItemsContent() {
               title="Your shared items"
             />
 
-            {itemsQuery.isPending ? (
+            {itemsQuery.isLoading ? (
               <LoadingState message="Loading your listings..." />
             ) : null}
 
