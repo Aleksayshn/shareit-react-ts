@@ -141,7 +141,7 @@ export function SearchItemsSection() {
         </div>
 
         <div className="grid gap-4">
-          <div className="rounded-[24px] border border-border/70 bg-white/65 p-5">
+          <div className="rounded-3xl border border-border/70 bg-white/65 p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
               Popular searches
             </p>
@@ -159,7 +159,7 @@ export function SearchItemsSection() {
             </div>
           </div>
 
-          <div className="rounded-[24px] border border-border/70 bg-white/65 p-5">
+          <div className="rounded-3xl border border-border/70 bg-white/65 p-5">
             <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
               Good to know
             </p>
